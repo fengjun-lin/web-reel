@@ -1,0 +1,10 @@
+---
+description: TypeScript rules for development
+globs: ['**/*.?(c|m)ts?(x)']
+alwaysApply: true
+---
+
+- **APIs**: Use explicit return types for public APIs
+- **Lint**: Run `yarn lint` after changes, `yarn lint-fix` for auto-fixes
+- **Structure**: Follow established import/export patterns with barrel exports
+- **Types**: No `any` without justification - use proper interfaces & explicit types

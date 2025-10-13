@@ -1,0 +1,21 @@
+---
+description: Yarn rules as package manager
+globs:
+alwaysApply: true
+---
+
+# Yarn
+
+This project uses `yarn` (Yarn Berry) as its package manager. Never use `npm` or `pnpm`.
+
+## Core Commands
+
+- `yarn <script>` - Run package.json script
+- `yarn add <package>` - Add dependency
+- `yarn add -D <package>` - Add dev dependency
+- `yarn install` - Install dependencies
+
+## Workspaces
+
+- `yarn workspace <name> <script>` - Run workspace script
+- `yarn workspace <name> add <package>` - Add to workspace
