@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test @web-reel/recorder</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    h1 { color: #333; }
+    .status { 
+      padding: 10px;
+      border-radius: 4px;
+      margin: 10px 0;
+      font-family: monospace;
+    }
+    .success { background: #d4edda; color: #155724; }
+    .error { background: #f8d7da; color: #721c24; }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover { background: #0056b3; }
+    #console-output {
+      background: #1e1e1e;
+      color: #00ff00;
+      padding: 15px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 20px;
+    }
+    .log-line { margin: 2px 0; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🧪 Test @web-reel/recorder</h1>
+    <p>This page tests the @web-reel/recorder package.</p>
+    
+    <div id="status"></div>
+    
+    <h3>Test Actions:</h3>
+    <button onclick="testClick()">Test Click Event</button>
+    <button onclick="testConsole()">Test Console Log</button>
+    <button onclick="testInput()">Test Input</button>
+    <button onclick="testFetch()">Test Fetch Request</button>
+    <button onclick="testExport()">Export Session</button>
+    
+    <div style="margin-top: 20px;">
+      <input type="text" id="test-input" placeholder="Type something here...">
+    </div>
+    
+    <div id="console-output">
+      <div style="color: #00ff00;">📟 Console Output:</div>
+    </div>
+  </div>
+
+  <script type="module">
+    // Note: This is a test template. To use it:
+    // 1. Create a Vite/React/Vue project
+    // 2. npm link @web-reel/recorder
+    // 3. npm install rrweb@^1.1.3
+    // 4. Use the code below
+
+    import { WebReelRecorder } from '@web-reel/recorder'
+    
+    const output = document.getElementById('console-output')
+    const status = document.getElementById('status')
+    
+    function log(message, type = 'info') {
+      const line = document.createElement('div')
+      line.className = 'log-line'
+      line.style.color = type === 'error' ? '#ff5555' : 
+                        type === 'success' ? '#50fa7b' : '#00ff00'
+      line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`
+      output.appendChild(line)
+      output.scrollTop = output.scrollHeight
+    }
+    
+    function showStatus(message, success) {
+      status.innerHTML = `<div class="status ${success ? 'success' : 'error'}">${message}</div>`
+    }
+    
+    // Initialize recorder
+    let recorder
+    try {
+      log('🚀 Initializing recorder...', 'info')
+      recorder = new WebReelRecorder({
+        env: 'test',
+        appId: 1,
+        projectName: 'test-recorder',
+        deviceId: 'test-user-123',
+        disabledDownLoad: false,
+      })
+      
+      log('✅ Recorder initialized successfully!', 'success')
+      log(`📊 Session ID: ${recorder.getSessionId()}`, 'info')
+      log(`✓ Is ready: ${recorder.isInitialized()}`, 'info')
+      showStatus('✅ Recorder initialized! Try the test buttons above.', true)
+      
+      // Make recorder available globally for testing
+      window.recorder = recorder
+      
+    } catch (error) {
+      log(`❌ Failed to initialize: ${error.message}`, 'error')
+      showStatus(`❌ Initialization failed: ${error.message}`, false)
+      console.error(error)
+    }
+    
+    // Test functions
+    window.testClick = function() {
+      log('🖱️ Click event triggered', 'info')
+      console.log('Test click logged')
+    }
+    
+    window.testConsole = function() {
+      log('📝 Testing console logs...', 'info')
+      console.log('This is a test log')
+      console.info('This is test info')
+      console.warn('This is a test warning')
+      console.error('This is a test error')
+      log('✅ Console logs sent', 'success')
+    }
+    
+    window.testInput = function() {
+      const input = document.getElementById('test-input')
+      input.focus()
+      log('⌨️ Input field focused - try typing!', 'info')
+    }
+    
+    window.testFetch = async function() {
+      try {
+        log('🌐 Sending fetch request...', 'info')
+        const response = await fetch('https://jsonplaceholder.typicode.com/todos/1')
+        const data = await response.json()
+        log(`✅ Fetch completed: ${data.title}`, 'success')
+      } catch (error) {
+        log(`❌ Fetch failed: ${error.message}`, 'error')
+      }
+    }
+    
+    window.testExport = async function() {
+      if (!recorder) {
+        log('❌ Recorder not initialized', 'error')
+        return
+      }
+      try {
+        log('📦 Exporting session...', 'info')
+        await recorder.exportLog(true) // Export as ZIP
+        log('✅ Session exported! Check your downloads.', 'success')
+      } catch (error) {
+        log(`❌ Export failed: ${error.message}`, 'error')
+      }
+    }
+    
+    // Log initial setup
+    log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'info')
+    log('📦 @web-reel/recorder Test Page', 'info')
+    log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'info')
+  </script>
+</body>
+</html>
+

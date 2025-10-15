@@ -1,6 +1,7 @@
 import { Layout, Menu } from 'antd'
 import { Link, Route, Routes, useLocation } from 'react-router-dom'
 
+import logo from './assets/logo-reel.png'
 import ReplayPage from './pages/replay'
 import SessionsPage from './pages/sessions'
 import RecorderTestPage from './pages/test'
@@ -17,19 +18,22 @@ export default function App() {
     const path = location.pathname
     if (path === '/') return 'home'
     if (path.startsWith('/replayer')) return 'replayer'
+    if (path === '/test') return 'test'
     return 'home'
   }
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout style={{ minHeight: '100vh', alignItems: 'center' }}>
       <Header style={{ position: 'fixed', zIndex: 1000, width: '100%', display: 'flex', alignItems: 'center' }}>
-        <div style={{ color: 'white', fontSize: '20px', fontWeight: 'bold', marginRight: '50px' }}>
-          Web-Reel
+        <div style={{ display: 'flex', alignItems: 'center', marginRight: '50px' }}>
+          <img src={logo} alt="Web Reel Logo" style={{ width: '32px', height: '32px', marginRight: '12px', border: '2px solid white', borderRadius: '6px' }} />
+          <span style={{ color: 'white', fontSize: '20px', fontWeight: 'bold' }}>Web-Reel</span>
         </div>
         <Menu
           theme="dark"
           mode="horizontal"
           selectedKeys={[getSelectedKey()]}
+          style={{ flex: 1 }}
           items={[
             {
               key: 'home',
@@ -39,11 +43,15 @@ export default function App() {
               key: 'replayer',
               label: <Link to="/replayer/0">Replayer</Link>,
             },
+            {
+              key: 'test',
+              label: <Link to="/test">Test</Link>,
+            }
           ]}
         />
       </Header>
       
-      <Content style={{ padding: '0 50px', marginTop: 64 }}>
+      <Content style={{ padding: '0 50px', marginTop: '64px', maxWidth: '1280px', width: '100%' }}>
         <div style={{ background: '#fff', padding: 24, minHeight: 'calc(100vh - 64px - 70px)' }}>
           <Routes>
             <Route path="/" element={<SessionsPage />} />

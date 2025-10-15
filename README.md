@@ -1,6 +1,10 @@
-# Web Reel
-
-A lightweight, browser-based session recording and replay tool built with React, TypeScript, and rrweb.
+<div align="center">
+  <img src="./public/icon-reel.png" alt="Web Reel Logo" width="120" height="120">
+  
+  # Web Reel
+  
+  A lightweight, browser-based session recording and replay tool built with React, TypeScript, and rrweb.
+</div>
 
 ## Features
 
