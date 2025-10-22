@@ -230,6 +230,15 @@ export class IDB {
   }
 
   /**
+   * Clear all data from a table
+   */
+  async clearTable(tableName = DEFAULT_DB_OBJECT.name): Promise<void> {
+    const tx = this.db.transaction(tableName, 'readwrite')
+    await tx.store.clear()
+    await tx.done
+  }
+
+  /**
    * Close database connection
    */
   closeDB = () => {

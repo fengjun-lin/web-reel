@@ -1,5 +1,5 @@
 import { CopyOutlined } from '@ant-design/icons'
-import { Button, Descriptions, Drawer, Empty, Space, Tag, Typography, message } from 'antd'
+import { Button, Descriptions, Drawer, Empty, Pagination, Space, Tag, Typography, message } from 'antd'
 import { useState } from 'react'
 
 import type { HarEntry } from '@/types/har'
@@ -7,6 +7,7 @@ import type { HarEntry } from '@/types/har'
 import './styles.css'
 
 const { Text } = Typography
+const PAGE_SIZE = 20 // Show 20 requests per page
 
 interface NetworkPanelProps {
   requests: HarEntry[]
@@ -211,6 +212,7 @@ function RequestDetail({ entry, visible, onClose }: RequestDetailProps) {
 export default function NetworkPanel({ requests, currentTime, onSeekToTime }: NetworkPanelProps) {
   const [selectedEntry, setSelectedEntry] = useState<HarEntry | null>(null)
   const [drawerVisible, setDrawerVisible] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
 
   // Sort requests by time
   const sortedRequests = [...requests].sort(
@@ -226,15 +228,40 @@ export default function NetworkPanel({ requests, currentTime, onSeekToTime }: Ne
     setDrawerVisible(false)
   }
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
   // Find highlighted request based on current time
   const isHighlighted = (entry: HarEntry) => {
     if (!currentTime) return false
     const requestTime = Date.parse(entry.startedDateTime)
-    return Math.abs(requestTime - currentTime) < 1000 // Within 1 second
+    const timeDiff = Math.abs(requestTime - currentTime)
+    return timeDiff < 2000 // Within 2 seconds
   }
+
+  // Calculate paginated requests
+  const totalRequests = sortedRequests.length
+  const startIndex = (currentPage - 1) * PAGE_SIZE
+  const endIndex = startIndex + PAGE_SIZE
+  const paginatedRequests = sortedRequests.slice(startIndex, endIndex)
 
   return (
     <div className="network-panel">
+      {totalRequests > PAGE_SIZE && (
+        <div style={{ padding: '8px 8px 4px', borderBottom: '1px solid #f0f0f0', background: '#fafafa' }}>
+          <Pagination
+            current={currentPage}
+            pageSize={PAGE_SIZE}
+            total={totalRequests}
+            onChange={handlePageChange}
+            showSizeChanger={false}
+            showTotal={(total) => `Total ${total} requests`}
+            size="small"
+          />
+        </div>
+      )}
+      
       <div className="network-panel-content">
         {sortedRequests.length === 0 ? (
           <Empty
@@ -242,9 +269,9 @@ export default function NetworkPanel({ requests, currentTime, onSeekToTime }: Ne
             style={{ marginTop: 40 }}
           />
         ) : (
-          sortedRequests.map((entry, index) => (
+          paginatedRequests.map((entry, index) => (
             <RequestItem
-              key={`${entry.startedDateTime}-${index}`}
+              key={`${entry.startedDateTime}-${startIndex + index}`}
               entry={entry}
               highlight={isHighlighted(entry)}
               onDetailClick={handleDetailClick}

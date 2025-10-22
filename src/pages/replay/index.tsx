@@ -275,7 +275,8 @@ export default function ReplayPage() {
           try {
             if (replayer) {
               replayer.on('ui-update-current-time', (event: any) => {
-                setCurrentTime(event as number)
+                const timestamp = event as number
+                setCurrentTime(timestamp)
               })
 
               // Enable interaction
@@ -432,7 +433,7 @@ export default function ReplayPage() {
                   </Text>
                 )
               }
-              style={{ flex: '0 0 65%' }}
+              style={{ flex: '0 0 60%', maxWidth: '60%' }}
             >
               <div
                 ref={containerRef}
@@ -440,6 +441,7 @@ export default function ReplayPage() {
                   border: '1px solid #d9d9d9',
                   borderRadius: 4,
                   minHeight: 600,
+                  maxHeight: 700,
                   backgroundColor: '#f5f5f5',
                   overflow: 'hidden',
                 }}
@@ -449,10 +451,20 @@ export default function ReplayPage() {
             {/* Panels Section */}
             <Card 
               title="Session Details" 
-              style={{ flex: '0 0 calc(35% - 16px)', minHeight: 600 }}
+              style={{ 
+                flex: '0 0 calc(40% - 16px)',
+                maxWidth: 'calc(40% - 16px)',
+                maxHeight: '750px'
+              }}
+              bodyStyle={{ 
+                height: '680px',
+                padding: 0,
+                overflow: 'hidden'
+              }}
             >
               <Tabs
                 defaultActiveKey="logs"
+                style={{ height: '100%' }}
                 items={[
                   {
                     key: 'logs',

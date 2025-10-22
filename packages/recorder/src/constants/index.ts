@@ -47,3 +47,7 @@ export const REPLAYER_SEARCH_HISTORY = 'replayer_search_history'
 
 // Maximum search history count
 export const MAX_SEARCH_HISTORY_COUNT = 5
+
+// Recording data limits
+export const MAX_EVENTS_PER_SESSION = 5000 // Maximum events to keep per session
+export const MAX_SESSIONS_TO_EXPORT = 1 // Only export the current session

@@ -69,9 +69,15 @@ export class EntryButton {
 
     button.className = className
     button.innerHTML = DOWNLOAD_ICON_SVG
-    button.title = 'Download replay data'
+    button.title = 'Export Session Recording'
     button.setAttribute('role', 'button')
-    button.setAttribute('aria-label', 'Download replay data')
+    button.setAttribute('aria-label', 'Export Session Recording')
+
+    // Add tooltip element
+    const tooltip = document.createElement('span')
+    tooltip.className = 'web-reel-entry-button-tooltip'
+    tooltip.textContent = 'Export Session Recording'
+    button.appendChild(tooltip)
 
     return button
   }

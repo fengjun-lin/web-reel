@@ -1,4 +1,4 @@
-import { Button, Descriptions, Drawer, Empty, Typography } from 'antd'
+import { Button, Descriptions, Drawer, Empty, Pagination, Typography } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 
 import { LEVEL_COLOR_MAP } from '@/constants'
@@ -7,12 +7,90 @@ import type { LogInfo } from '@/types'
 import './styles.css'
 
 const { Text } = Typography
+const PAGE_SIZE = 50 // Show 50 logs per page
 
 interface ConsolePanelProps {
   logs: LogInfo[]
   autoScroll?: boolean
   currentTime?: number
   onSeekToTime?: (timestamp: number) => void
+}
+
+/**
+ * Parse console format strings like '%c text' with CSS styles
+ */
+function parseFormattedLog(args: any[]): { text: string; styles?: React.CSSProperties }[] {
+  if (!Array.isArray(args) || args.length === 0) {
+    return [{ text: String(args) }]
+  }
+
+  const result: { text: string; styles?: React.CSSProperties }[] = []
+  const firstArg = String(args[0])
+  
+  // Check if first argument contains %c (CSS style format)
+  if (!firstArg.includes('%c')) {
+    // No CSS formatting, just join all args
+    const allText = args.map(arg => 
+      typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+    ).join(' ')
+    return [{ text: allText }]
+  }
+
+  // Split by %c to get text segments
+  const segments = firstArg.split('%c')
+  let styleArgIndex = 1 // Start from args[1] for styles
+  
+  // First segment has no style
+  if (segments[0]) {
+    result.push({ text: segments[0] })
+  }
+  
+  // Process remaining segments with styles
+  for (let i = 1; i < segments.length; i++) {
+    const text = segments[i]
+    const styleArg = args[styleArgIndex]
+    
+    if (text) {
+      if (styleArg && typeof styleArg === 'string') {
+        const styles = parseCSSText(styleArg)
+        result.push({ text, styles })
+      } else {
+        result.push({ text })
+      }
+    }
+    
+    styleArgIndex++
+  }
+  
+  // Add remaining arguments (objects, etc.)
+  for (let i = styleArgIndex; i < args.length; i++) {
+    const arg = args[i]
+    if (arg !== undefined && arg !== null) {
+      const text = typeof arg === 'object' ? ' ' + JSON.stringify(arg, null, 2) : ' ' + String(arg)
+      result.push({ text })
+    }
+  }
+
+  return result
+}
+
+/**
+ * Parse CSS text string to React CSSProperties
+ */
+function parseCSSText(cssText: string): React.CSSProperties {
+  const styles: any = {}
+  const declarations = cssText.split(';').map(d => d.trim()).filter(Boolean)
+  
+  for (const declaration of declarations) {
+    const [property, value] = declaration.split(':').map(s => s.trim())
+    if (property && value) {
+      // Convert kebab-case to camelCase
+      const camelProperty = property.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())
+      styles[camelProperty] = value
+    }
+  }
+  
+  return styles as React.CSSProperties
 }
 
 function LogItemContent({ item }: { item: any }) {
@@ -75,6 +153,9 @@ interface LogItemProps {
 function LogItem({ log, highlight, onSeekToTime, onClick }: LogItemProps) {
   const backgroundColor = LEVEL_COLOR_MAP[log.level] || '#fff'
 
+  // Parse formatted log content
+  const formattedContent = Array.isArray(log.info) ? parseFormattedLog(log.info) : [{ text: String(log.info) }]
+
   return (
     <div
       className={`console-log-item ${highlight ? 'console-log-item-highlight' : ''}`}
@@ -98,15 +179,11 @@ function LogItem({ log, highlight, onSeekToTime, onClick }: LogItemProps) {
         )}
       </div>
       <div className="console-log-content">
-        {Array.isArray(log.info) ? (
-          log.info.map((item, index) => (
-            <div key={index} style={{ marginBottom: 4 }}>
-              <LogItemContent item={item} />
-            </div>
-          ))
-        ) : (
-          <LogItemContent item={log.info} />
-        )}
+        {formattedContent.map((segment, index) => (
+          <span key={index} style={segment.styles}>
+            {segment.text}
+          </span>
+        ))}
       </div>
     </div>
   )
@@ -120,6 +197,9 @@ interface LogDetailProps {
 
 function LogDetail({ log, visible, onClose }: LogDetailProps) {
   if (!log) return null
+
+  // Parse formatted log content for detail view
+  const formattedContent = Array.isArray(log.info) ? parseFormattedLog(log.info) : [{ text: String(log.info) }]
 
   return (
     <Drawer
@@ -152,21 +232,16 @@ function LogDetail({ log, visible, onClose }: LogDetailProps) {
           borderRadius: 4, 
           border: '1px solid #f0f0f0',
           maxHeight: 600,
-          overflow: 'auto'
+          overflow: 'auto',
+          fontFamily: "'Courier New', Courier, monospace",
+          fontSize: 14,
+          lineHeight: 1.8
         }}>
-          {Array.isArray(log.info) ? (
-            log.info.map((item, index) => (
-              <div key={index} style={{ marginBottom: 12 }}>
-                <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
-                  {typeof item === 'object' ? JSON.stringify(item, null, 2) : String(item)}
-                </pre>
-              </div>
-            ))
-          ) : (
-            <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
-              {typeof log.info === 'object' ? JSON.stringify(log.info, null, 2) : String(log.info)}
-            </pre>
-          )}
+          {formattedContent.map((segment, index) => (
+            <span key={index} style={segment.styles}>
+              {segment.text}
+            </span>
+          ))}
         </div>
       </div>
     </Drawer>
@@ -182,6 +257,7 @@ export default function ConsolePanel({
   const containerRef = useRef<HTMLDivElement>(null)
   const [selectedLog, setSelectedLog] = useState<LogInfo | null>(null)
   const [drawerVisible, setDrawerVisible] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
 
   // Auto scroll to bottom when new logs are added
   useEffect(() => {
@@ -193,8 +269,9 @@ export default function ConsolePanel({
   // Check if a log should be highlighted based on current time
   const isHighlighted = (log: LogInfo) => {
     if (!currentTime || !log.timestamp) return false
-    // Highlight logs within 1 second of current playback time
-    return Math.abs(log.timestamp - currentTime) < 1000
+    // Highlight logs within 2 seconds of current playback time
+    const timeDiff = Math.abs(log.timestamp - currentTime)
+    return timeDiff < 2000
   }
 
   const handleLogClick = (log: LogInfo) => {
@@ -206,8 +283,36 @@ export default function ConsolePanel({
     setDrawerVisible(false)
   }
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    // Scroll to top when changing pages
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0
+    }
+  }
+
+  // Calculate paginated logs
+  const totalLogs = logs.length
+  const startIndex = (currentPage - 1) * PAGE_SIZE
+  const endIndex = startIndex + PAGE_SIZE
+  const paginatedLogs = logs.slice(startIndex, endIndex)
+
   return (
     <div className="console-panel">
+      {totalLogs > PAGE_SIZE && (
+        <div style={{ padding: '8px 8px 4px', borderBottom: '1px solid #f0f0f0', background: '#fafafa' }}>
+          <Pagination
+            current={currentPage}
+            pageSize={PAGE_SIZE}
+            total={totalLogs}
+            onChange={handlePageChange}
+            showSizeChanger={false}
+            showTotal={(total) => `Total ${total} logs`}
+            size="small"
+          />
+        </div>
+      )}
+      
       <div ref={containerRef} className="console-panel-content">
         {logs.length === 0 ? (
           <Empty
@@ -215,9 +320,9 @@ export default function ConsolePanel({
             style={{ marginTop: 40 }}
           />
         ) : (
-          logs.map((log, index) => (
+          paginatedLogs.map((log, index) => (
             <LogItem 
-              key={index} 
+              key={startIndex + index} 
               log={log} 
               highlight={isHighlighted(log)}
               onSeekToTime={onSeekToTime}

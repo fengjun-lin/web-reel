@@ -189,6 +189,10 @@ export class WebReelRecorder {
    * Initialize rrweb recording
    */
   private initializeRecording(): void {
+    // Track event count for current session
+    let eventCount = 0
+    const MAX_EVENTS = 5000
+    
     this.stopRecordingFn = record({
       emit: async (event: eventWithTime) => {
         // Save event to database
@@ -199,6 +203,34 @@ export class WebReelRecorder {
           },
           DB_TABLE_NAME.RENDER_EVENT
         )
+        
+        // Increment counter and check if we need to clean up old events
+        eventCount++
+        if (eventCount > MAX_EVENTS) {
+          // Delete oldest events to keep only MAX_EVENTS
+          try {
+            const allEvents = await this.db.getDataByIndexValue(
+              DB_TABLE_NAME.RENDER_EVENT,
+              DB_INDEX_KEY,
+              this.sessionId
+            )
+            
+            if (allEvents && allEvents.length > MAX_EVENTS) {
+              // Sort by timestamp and delete oldest ones
+              const sortedEvents = allEvents.sort((a: any, b: any) => a.timestamp - b.timestamp)
+              const eventsToDelete = sortedEvents.slice(0, allEvents.length - MAX_EVENTS)
+              
+              for (const evt of eventsToDelete) {
+                await this.db.delete(evt.id, DB_TABLE_NAME.RENDER_EVENT)
+              }
+              
+              console.log(`[Web-Reel] Cleaned up ${eventsToDelete.length} old events (keeping last ${MAX_EVENTS})`)
+              eventCount = MAX_EVENTS
+            }
+          } catch (error) {
+            console.error('[Web-Reel] Failed to cleanup old events:', error)
+          }
+        }
       },
       // Enable console recording using the console plugin
       plugins: [
@@ -236,16 +268,56 @@ export class WebReelRecorder {
   /**
    * Export logs to file
    */
-  public async exportLog(useZip: boolean = false): Promise<void> {
+  public async exportLog(useZip: boolean = false, clearAfterExport: boolean = true): Promise<void> {
+    console.log('[Web-Reel Export] Starting export...')
+    
     const eventDataMap = await this.db.getByIndexKey(DB_TABLE_NAME.RENDER_EVENT, DB_INDEX_KEY)
     const responseDataMap = await this.db.getByIndexKey(DB_TABLE_NAME.RESPONSE_DATA, DB_INDEX_KEY)
 
-    console.log(`[Web-Reel] Exporting ${Object.keys(eventDataMap).length} sessions`)
+    // Only export current session to avoid data too large
+    const currentSessionId = String(this.sessionId)
+    const limitedEventDataMap = currentSessionId in eventDataMap 
+      ? { [currentSessionId]: eventDataMap[currentSessionId] } 
+      : {}
+    const limitedResponseDataMap = currentSessionId in responseDataMap
+      ? { [currentSessionId]: responseDataMap[currentSessionId] }
+      : {}
+
+    // Count total items
+    let totalEvents = (limitedEventDataMap[currentSessionId] || []).length
+    let totalResponses = (limitedResponseDataMap[currentSessionId] || []).length
+    
+    // Limit events to prevent "Invalid string length" error
+    const MAX_EVENTS = 5000
+    if (totalEvents > MAX_EVENTS) {
+      console.warn(`[Web-Reel Export] Too many events (${totalEvents}), limiting to last ${MAX_EVENTS}`)
+      limitedEventDataMap[currentSessionId] = limitedEventDataMap[currentSessionId].slice(-MAX_EVENTS)
+      totalEvents = MAX_EVENTS
+    }
+    
+    console.log(`[Web-Reel Export] Exporting current session: ${totalEvents} events, ${totalResponses} requests`)
+
+    if (totalEvents === 0 && totalResponses === 0) {
+      console.warn('[Web-Reel Export] No data found for current session!')
+      return
+    }
 
     if (useZip) {
-      await exportToZip(eventDataMap, responseDataMap)
+      await exportToZip(limitedEventDataMap, limitedResponseDataMap)
     } else {
-      await exportToFile(eventDataMap, responseDataMap)
+      await exportToFile(limitedEventDataMap, limitedResponseDataMap)
+    }
+    
+    // Clear exported data after successful export
+    if (clearAfterExport) {
+      console.log('[Web-Reel Export] Clearing data...')
+      try {
+        await this.db.clearTable(DB_TABLE_NAME.RENDER_EVENT)
+        await this.db.clearTable(DB_TABLE_NAME.RESPONSE_DATA)
+        console.log('[Web-Reel Export] ✅ Data cleared')
+      } catch (error) {
+        console.error('[Web-Reel Export] ❌ Failed to clear data:', error)
+      }
     }
   }
 
