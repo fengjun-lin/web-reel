@@ -1,4 +1,4 @@
-import { record } from 'rrweb'
+import { record, getRecordConsolePlugin } from 'rrweb'
 import type { eventWithTime } from 'rrweb/typings/types'
 
 import { exportToFile, exportToZip } from './export'
@@ -200,12 +200,17 @@ export class WebReelRecorder {
           DB_TABLE_NAME.RENDER_EVENT
         )
       },
-      // Enable console recording (rrweb 1.x built-in feature)
-      // @ts-ignore - recordLog is supported in rrweb 1.x but not in type definitions
-      recordLog: true,
-    } as any)
+      // Enable console recording using the console plugin
+      plugins: [
+        getRecordConsolePlugin({
+          level: ['log', 'info', 'warn', 'error', 'debug'],
+          lengthThreshold: 10000, // Max length for string values
+          logger: 'console', // Record from window.console
+        }),
+      ],
+    })
 
-    console.log('[Web-Reel] rrweb recording initialized')
+    console.log('[Web-Reel] rrweb recording initialized with console plugin')
   }
 
   /**

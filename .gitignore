@@ -25,3 +25,9 @@ dist-ssr
 legacy
 .cursor/*
 memory-bank/*
+
+# Generated documentation files
+REPLAY_DEBUG.md
+CONSOLE_PLUGIN_FIX.md
+REPLAY_OPTIMIZATION_SUMMARY.md
+FIX_SUMMARY.md

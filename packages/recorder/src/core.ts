@@ -1,12 +1,11 @@
 import { record } from 'rrweb'
 import type { eventWithTime } from 'rrweb/typings/types'
 
-import { exportToFile, exportToZip } from './export'
-import { NetworkInterceptor } from './interceptors'
-import { EntryButton } from './ui'
 
 import { DB_INDEX_KEY, DB_TABLE_NAME } from './constants/db'
 import { LOCAL_UPLOADING_FLAG, UNKNOWN_DEVICE_ID } from './constants/session'
+import { exportToFile } from './export'
+import { NetworkInterceptor } from './interceptors'
 import {
   getUploadLogFlag,
   setUploadLogFlag,
@@ -23,6 +22,7 @@ import type {
 } from './types'
 import { ErrNoType as ErrNo, UploadFlag as UFlag } from './types'
 import type { HarEntry } from './types/har'
+import { EntryButton } from './ui'
 import { compatibilityJudge } from './utils/browser'
 import { IDB } from './utils/db'
 import { cleanOldData, getRenderEventSize, getResponseDataSize, initDB } from './utils/dbHelper'
@@ -52,6 +52,14 @@ export class WebReelRecorder {
   private isReady: boolean = false // Whether the recorder is fully initialized
 
   constructor(config: RecorderConfig) {
+    // Skip initialization in non-browser environments (SSR)
+    if (typeof window === 'undefined') {
+      console.warn('[Web-Reel] Skipping initialization in non-browser environment (SSR)')
+      this.config = config
+      this.sessionId = 0
+      return
+    }
+
     this.config = this.parseConfig(config)
     this.sessionId = 0
 
@@ -189,6 +197,9 @@ export class WebReelRecorder {
    * Initialize rrweb recording
    */
   private initializeRecording(): void {
+    // Create a console interceptor for rrweb < 2.0
+    const consoleRecord = this.createConsoleRecordPlugin()
+    
     this.stopRecordingFn = record({
       emit: async (event: eventWithTime) => {
         // Save event to database
@@ -200,12 +211,84 @@ export class WebReelRecorder {
           DB_TABLE_NAME.RENDER_EVENT
         )
       },
-      // Enable console recording (rrweb 1.x built-in feature)
-      // @ts-ignore - recordLog is supported in rrweb 1.x but not in type definitions
+      // Try both ways to enable console recording
       recordLog: true,
+      plugins: consoleRecord ? [consoleRecord] : [],
     } as any)
 
-    console.log('[Web-Reel] rrweb recording initialized')
+    // This will be intercepted by our console recorder
+    console.log('[Web-Reel] rrweb recording initialized with console logging')
+  }
+  
+  /**
+   * Create console record plugin for rrweb < 2.0
+   */
+  private createConsoleRecordPlugin() {
+    // Manual console interceptor as fallback
+    const originalConsole = {
+      log: console.log.bind(console),
+      info: console.info.bind(console),
+      warn: console.warn.bind(console),
+      error: console.error.bind(console),
+      debug: console.debug.bind(console),
+    }
+    
+    try {
+      
+      const emit = (level: string, ...args: any[]) => {
+        // Emit as rrweb plugin event
+        const event = {
+          type: 6,
+          data: {
+            plugin: 'rrweb/console@1',
+            payload: {
+              level,
+              payload: args,
+              trace: [],
+            },
+          },
+          timestamp: Date.now(),
+        }
+        
+        // Save to database directly
+        this.db.add(
+          {
+            [DB_INDEX_KEY]: this.sessionId,
+            ...event,
+          },
+          DB_TABLE_NAME.RENDER_EVENT
+        ).catch(() => {
+          // Silently ignore errors to avoid console spam
+        })
+      }
+      
+      // Intercept console methods
+      ;(console as any).log = (...args: any[]) => {
+        originalConsole.log.apply(console, args)
+        emit('log', ...args)
+      }
+      ;(console as any).info = (...args: any[]) => {
+        originalConsole.info.apply(console, args)
+        emit('info', ...args)
+      }
+      ;(console as any).warn = (...args: any[]) => {
+        originalConsole.warn.apply(console, args)
+        emit('warn', ...args)
+      }
+      ;(console as any).error = (...args: any[]) => {
+        originalConsole.error.apply(console, args)
+        emit('error', ...args)
+      }
+      ;(console as any).debug = (...args: any[]) => {
+        originalConsole.debug.apply(console, args)
+        emit('debug', ...args)
+      }
+      
+      return null // No plugin needed, we handle it manually
+    } catch (error) {
+      // Silently ignore errors
+      return null
+    }
   }
 
   /**
@@ -229,19 +312,15 @@ export class WebReelRecorder {
   }
 
   /**
-   * Export logs to file
+   * Export all session data as JSON file
    */
-  public async exportLog(useZip: boolean = false): Promise<void> {
+  public async exportLog(): Promise<void> {
     const eventDataMap = await this.db.getByIndexKey(DB_TABLE_NAME.RENDER_EVENT, DB_INDEX_KEY)
     const responseDataMap = await this.db.getByIndexKey(DB_TABLE_NAME.RESPONSE_DATA, DB_INDEX_KEY)
 
     console.log(`[Web-Reel] Exporting ${Object.keys(eventDataMap).length} sessions`)
 
-    if (useZip) {
-      await exportToZip(eventDataMap, responseDataMap)
-    } else {
-      await exportToFile(eventDataMap, responseDataMap)
-    }
+    await exportToFile(eventDataMap, responseDataMap)
   }
 
   /**

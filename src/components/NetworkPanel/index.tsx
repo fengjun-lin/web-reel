@@ -11,6 +11,7 @@ const { Text } = Typography
 interface NetworkPanelProps {
   requests: HarEntry[]
   currentTime?: number
+  onSeekToTime?: (timestamp: number) => void
 }
 
 function getStatusColor(status: number): string {
@@ -46,21 +47,37 @@ interface RequestItemProps {
   entry: HarEntry
   highlight: boolean
   onDetailClick: (_entry: HarEntry) => void
+  onSeekToTime?: (timestamp: number) => void
 }
 
-function RequestItem({ entry, highlight, onDetailClick }: RequestItemProps) {
+function RequestItem({ entry, highlight, onDetailClick, onSeekToTime }: RequestItemProps) {
   const name = getEntryName(entry.request.url)
   const statusColor = getStatusColor(entry.response.status)
+  const requestTime = Date.parse(entry.startedDateTime)
 
   return (
-    <div className={`network-item ${highlight ? 'network-item-highlight' : ''}`}>
+    <div 
+      className={`network-item ${highlight ? 'network-item-highlight' : ''}`}
+      onClick={() => onDetailClick(entry)}
+    >
       <div className="network-item-header">
         <Text strong className="network-item-name" title={entry.request.url}>
           {name}
         </Text>
-        <Button type="link" size="small" onClick={() => onDetailClick(entry)}>
-          Details →
-        </Button>
+        <Space size="small">
+          {onSeekToTime && (
+            <Button 
+              type="link" 
+              size="small" 
+              onClick={(e) => {
+                e.stopPropagation()
+                onSeekToTime(requestTime)
+              }}
+            >
+              Seek →
+            </Button>
+          )}
+        </Space>
       </div>
       <Space size="middle" className="network-item-info">
         <Text type="secondary">
@@ -191,7 +208,7 @@ function RequestDetail({ entry, visible, onClose }: RequestDetailProps) {
   )
 }
 
-export default function NetworkPanel({ requests, currentTime }: NetworkPanelProps) {
+export default function NetworkPanel({ requests, currentTime, onSeekToTime }: NetworkPanelProps) {
   const [selectedEntry, setSelectedEntry] = useState<HarEntry | null>(null)
   const [drawerVisible, setDrawerVisible] = useState(false)
 
@@ -218,13 +235,6 @@ export default function NetworkPanel({ requests, currentTime }: NetworkPanelProp
 
   return (
     <div className="network-panel">
-      <div className="network-panel-header">
-        <Space>
-          <Text strong>Network Requests</Text>
-          <Text type="secondary">({sortedRequests.length} requests)</Text>
-        </Space>
-      </div>
-
       <div className="network-panel-content">
         {sortedRequests.length === 0 ? (
           <Empty
@@ -238,6 +248,7 @@ export default function NetworkPanel({ requests, currentTime }: NetworkPanelProp
               entry={entry}
               highlight={isHighlighted(entry)}
               onDetailClick={handleDetailClick}
+              onSeekToTime={onSeekToTime}
             />
           ))
         )}

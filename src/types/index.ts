@@ -33,6 +33,7 @@ export type LogData = {
 export type LogInfo = {
   level: LogLevel
   info: any[]
+  timestamp?: number
 }
 
 // Application IDs enum

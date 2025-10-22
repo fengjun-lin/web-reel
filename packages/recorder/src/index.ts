@@ -8,7 +8,7 @@ export { WebReelRecorder } from './core'
 export type { RecorderConfig } from './core'
 
 // Export utilities
-export { exportToFile, exportToZip } from './export'
+export { exportToFile } from './export'
 
 // Network interceptor
 export { NetworkInterceptor } from './interceptors'

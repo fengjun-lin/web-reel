@@ -37,7 +37,7 @@ npm publish --access public
 #### Step 3: Install in any project
 
 ```bash
-npm install @web-reel/recorder rrweb@^1.1.3
+npm install @web-reel/recorder rrweb@^1.1.3 idb@^8.0.3
 ```
 
 ```typescript
@@ -66,8 +66,8 @@ npm link
 
 ```bash
 cd /path/to/your-project
-npm link @web-reel/recorder
-npm install rrweb@^1.1.3
+npm link @web-reel/recorder --legacy-peer-deps
+npm install rrweb@^1.1.3 idb@^8.0.3
 ```
 
 #### Step 3: Import and use
@@ -85,7 +85,7 @@ import { WebReelRecorder } from '@web-reel/recorder'
 
 ```bash
 cd /path/to/your-project
-npm install ../web-reel/packages/recorder rrweb@^1.1.3
+npm install ../web-reel/packages/recorder rrweb@^1.1.3 idb@^8.0.3
 ```
 
 This will add to your `package.json`:
@@ -93,7 +93,8 @@ This will add to your `package.json`:
 {
   "dependencies": {
     "@web-reel/recorder": "file:../web-reel/packages/recorder",
-    "rrweb": "^1.1.3"
+    "rrweb": "^1.1.3",
+    "idb": "^8.0.3"
   }
 }
 ```
@@ -135,9 +136,8 @@ const recorder = new WebReelRecorder({
 // Stop recording
 recorder.stop()
 
-// Export logs
-await recorder.exportLog()        // JSON file
-await recorder.exportLog(true)    // ZIP file
+// Export logs as JSON file
+await recorder.exportLog()
 
 // Get session ID
 const sessionId = recorder.getSessionId()
@@ -152,13 +152,12 @@ const db = recorder.getDB()
 ### Advanced: Export Utilities
 
 ```typescript
-import { exportToFile, exportToZip } from '@web-reel/recorder'
+import { exportToFile } from '@web-reel/recorder'
 
 const eventDataMap = { /* ... */ }
 const responseDataMap = { /* ... */ }
 
-await exportToFile(eventDataMap, responseDataMap, 'custom-name')
-await exportToZip(eventDataMap, responseDataMap, 'session-123')
+await exportToFile(eventDataMap, responseDataMap)
 ```
 
 ### Advanced: Network Interceptor
@@ -380,15 +379,14 @@ try {
 
 ## 📦 Package Size
 
-- **ESM**: 41.93 KB
-- **CommonJS**: 42.82 KB
-- **Types**: 11.85 KB
-- **Total (with deps)**: ~150KB
+- **ESM**: 41.15 KB
+- **CommonJS**: 41.86 KB
+- **Types**: 11.65 KB
+- **Total**: ~42KB (recorder only)
 
-Dependencies:
-- `idb`: ~8KB
-- `jszip`: ~100KB
-- Peer: `rrweb`: ~100KB (already in your project)
+### Required Dependencies
+- `rrweb`: ~100KB (screen recording engine)
+- `idb`: ~8KB (IndexedDB wrapper)
 
 ---
 

@@ -1,5 +1,3 @@
-import JSZip from 'jszip'
-
 import type { HarEntry } from './types/har'
 
 export interface RecordCollection {
@@ -10,7 +8,7 @@ export interface RecordCollection {
 }
 
 /**
- * Export session data to file
+ * Export session data to JSON file
  */
 export async function exportToFile(
   eventDataMap: { [traceTime: string]: any[] },
@@ -49,49 +47,9 @@ export async function exportToFile(
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
 
-    console.log('[Export] Session data exported successfully')
+    console.log('[Export] Session data exported successfully as JSON')
   } catch (error) {
     console.error('[Export] Failed to export file:', error)
-    throw error
-  }
-}
-
-/**
- * Export session data as ZIP file
- */
-export async function exportToZip(
-  eventDataMap: { [traceTime: string]: any[] },
-  responseDataMap: { [traceTime: string]: HarEntry[] }
-): Promise<void> {
-  try {
-    const zip = new JSZip()
-
-    // Add each session as separate files
-    Object.keys(eventDataMap).forEach((sessionId) => {
-      const sessionData = {
-        eventData: eventDataMap[sessionId] || [],
-        responseData: responseDataMap[sessionId] || [],
-      }
-
-      zip.file(`session-${sessionId}.json`, JSON.stringify(sessionData, null, 2))
-    })
-
-    // Generate ZIP file
-    const content = await zip.generateAsync({ type: 'blob' })
-
-    // Download
-    const url = URL.createObjectURL(content)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `records-${Date.now()}.zip`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-
-    console.log('[Export] Session data exported as ZIP successfully')
-  } catch (error) {
-    console.error('[Export] Failed to export ZIP:', error)
     throw error
   }
 }

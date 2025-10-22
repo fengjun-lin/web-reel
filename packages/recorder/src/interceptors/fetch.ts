@@ -24,8 +24,17 @@ interface FetchConfig {
   onRequestFailure?: (_entry: HarEntry) => void
 }
 
-// Store original fetch
-const originalFetch = window.fetch
+// Store original fetch (lazily initialized)
+let originalFetch: typeof fetch | undefined
+
+// Initialize only in browser environment
+function ensureInitialized() {
+  if (typeof window === 'undefined') return false
+  if (!originalFetch) {
+    originalFetch = window.fetch
+  }
+  return true
+}
 
 /**
  * Create HAR entry from Fetch data
@@ -121,6 +130,11 @@ async function createResponseContent(response: Response): Promise<HarContent> {
  * Install Fetch interceptor
  */
 export function installFetchInterceptor(config: FetchConfig): () => void {
+  // Skip in non-browser environment (e.g., SSR)
+  if (!ensureInitialized()) {
+    return () => {} // Return no-op uninstall function
+  }
+
   // eslint-disable-next-line no-undef
   window.fetch = function (input: string | Request | URL, init?: RequestInit): Promise<Response> {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
@@ -139,7 +153,7 @@ export function installFetchInterceptor(config: FetchConfig): () => void {
     config.onBeforeRequest?.(requestData)
 
     // Call original fetch
-    return originalFetch(input, init).then(
+    return originalFetch!(input, init).then(
       async (response) => {
         requestData.endTime = Date.now()
         
@@ -203,6 +217,6 @@ export function installFetchInterceptor(config: FetchConfig): () => void {
 
   // Return uninstall function
   return () => {
-    window.fetch = originalFetch
+    window.fetch = originalFetch!
   }
 }

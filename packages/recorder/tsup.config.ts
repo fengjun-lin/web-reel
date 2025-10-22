@@ -10,7 +10,8 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   minify: false,
-  external: ['rrweb'],
+  // Mark as external - let user's project handle these
+  external: ['rrweb', 'jszip', 'idb'],
   treeshake: true,
   outDir: 'dist',
   tsconfig: './tsconfig.json',

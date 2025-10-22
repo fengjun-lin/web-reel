@@ -250,32 +250,24 @@ export default function ReplayPage() {
             target: containerRef.current,
             // v1: UI config in props
             props: {
+              events: sessionData.eventData,
               width: Math.max(containerRef.current.offsetWidth || 1200, 800),
               height: 600,
-            },
-            // v1: Events and player settings in data
-            data: {
-              events: sessionData.eventData,
               autoPlay: false,
               speed: 1,
               showController: true,
-            },
-            // v1: Replayer config in replayOptions (not replayerConfig!)
-            replayOptions: {
-              inlineStylesheet: false, // Disable CSS inlining to avoid PostCSS errors
-              showWarning: false,
-              mouseTail: false,
               skipInactive: true,
-              unpackFn: (data: any) => data,
+              inactiveColor: '#D4D4D4', // Customize inactive periods color in progress bar
+              // Enable console log replay
+              replayLog: true,
             },
           } as any)
 
           playerRef.current = player
 
-          // Verify config is applied (v1 debugging)
+          // Setup replayer event listeners
           const replayer = player.getReplayer()
           if (replayer) {
-            console.log('[Replay] inlineStylesheet:', (replayer as any).config?.inlineStylesheet)
             console.log('[Replay] Player initialized successfully')
           }
 
@@ -332,14 +324,8 @@ export default function ReplayPage() {
   const extractConsoleLogs = (events: eventWithTime[]) => {
     const logs: LogInfo[] = []
     
-    // Add a welcome log
-    logs.push({
-      level: 'info',
-      info: ['Session playback started', new Date().toLocaleString()],
-    })
-
     // Extract console logs from rrweb events
-    // rrweb records console logs as plugin events (type 6)
+    // rrweb records console logs as plugin events (type 6) with plugin name 'rrweb/console@1'
     events.forEach((event: any) => {
       if (event.type === 6 && event.data?.plugin === 'rrweb/console@1') {
         const payload = event.data.payload
@@ -347,12 +333,34 @@ export default function ReplayPage() {
           logs.push({
             level: payload.level,
             info: payload.payload || [],
+            timestamp: event.timestamp, // Store timestamp for timeline sync
           })
         }
       }
     })
 
+    console.log('[Replay] Extracted', logs.length, 'console logs')
     setConsoleLogs(logs)
+  }
+
+  const handleSeekToTime = (timestamp: number) => {
+    const player = playerRef.current
+    if (player && sessionData) {
+      try {
+        // Calculate time offset from the start of the recording
+        const startTime = sessionData.eventData[0]?.timestamp || 0
+        const timeOffset = timestamp - startTime
+        
+        console.log('[Replay] Seeking to timestamp:', timestamp, 'start:', startTime, 'offset:', timeOffset, 'ms')
+        
+        // Use player.goto method which is the correct way to seek in rrweb-player
+        player.goto(timeOffset, false) // false = pause after seeking
+        setCurrentTime(timestamp)
+      } catch (error) {
+        console.error('[Replay] Failed to seek:', error)
+        message.error('Failed to seek to the specified time')
+      }
+    }
   }
 
   const formatTime = (timestamp: number) => {
@@ -413,47 +421,65 @@ export default function ReplayPage() {
             closable
           />
 
-          <Card
-            title="Session Player"
-            extra={
-              sessionData.eventData[0] && (
-                <Text type="secondary">
-                  Start: {formatTime(sessionData.eventData[0].timestamp)}
-                </Text>
-              )
-            }
-          >
-            <div
-              ref={containerRef}
-              style={{
-                border: '1px solid #d9d9d9',
-                borderRadius: 4,
-                minHeight: 600,
-                backgroundColor: '#f5f5f5',
-                overflow: 'hidden',
-              }}
-            />
-          </Card>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+            {/* Player Section */}
+            <Card
+              title="Session Player"
+              extra={
+                sessionData.eventData[0] && (
+                  <Text type="secondary">
+                    Start: {formatTime(sessionData.eventData[0].timestamp)}
+                  </Text>
+                )
+              }
+              style={{ flex: '0 0 65%' }}
+            >
+              <div
+                ref={containerRef}
+                style={{
+                  border: '1px solid #d9d9d9',
+                  borderRadius: 4,
+                  minHeight: 600,
+                  backgroundColor: '#f5f5f5',
+                  overflow: 'hidden',
+                }}
+              />
+            </Card>
 
-          <Card title="Session Details">
-            <Tabs
-              defaultActiveKey="logs"
-              items={[
-                {
-                  key: 'logs',
-                  label: `Console Logs (${consoleLogs.length})`,
-                  children: <ConsolePanel logs={consoleLogs} />,
-                },
-                {
-                  key: 'network',
-                  label: `Network (${sessionData.responseData.length})`,
-                  children: (
-                    <NetworkPanel requests={sessionData.responseData} currentTime={currentTime} />
-                  ),
-                },
-              ]}
-            />
-          </Card>
+            {/* Panels Section */}
+            <Card 
+              title="Session Details" 
+              style={{ flex: '0 0 calc(35% - 16px)', minHeight: 600 }}
+            >
+              <Tabs
+                defaultActiveKey="logs"
+                items={[
+                  {
+                    key: 'logs',
+                    label: `Console (${consoleLogs.length})`,
+                    children: (
+                      <ConsolePanel 
+                        logs={consoleLogs} 
+                        currentTime={currentTime}
+                        onSeekToTime={handleSeekToTime}
+                      />
+                    ),
+                  },
+                  {
+                    key: 'network',
+                    label: `Network (${sessionData.responseData.length})`,
+                    children: (
+                      <NetworkPanel 
+                        requests={sessionData.responseData} 
+                        currentTime={currentTime}
+                        onSeekToTime={handleSeekToTime}
+                      />
+                    ),
+                  },
+                ]}
+              />
+            </Card>
+          </div>
         </>
       )}
     </Space>

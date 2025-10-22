@@ -32,7 +32,7 @@ export const LOG_LEVELS: LogLevel[] = [
 export const LEVEL_COLOR_MAP: Record<string, string> = {
   warn: '#fffbe5',
   error: '#fff0f0',
-  info: 'rgba(20,133,238,0.2)',
+  info: '#f5f5f5', // Gray color to avoid conflict with highlight blue
 }
 
 // Application mapping

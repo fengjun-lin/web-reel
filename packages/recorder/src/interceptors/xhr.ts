@@ -24,11 +24,23 @@ interface XhrConfig {
   onError?: (_entry: HarEntry) => void
 }
 
-// Store original XMLHttpRequest methods
-const OriginalXHR = window.XMLHttpRequest
-const originalOpen = OriginalXHR.prototype.open
-const originalSend = OriginalXHR.prototype.send
-const originalSetRequestHeader = OriginalXHR.prototype.setRequestHeader
+// Store original XMLHttpRequest methods (lazily initialized)
+let OriginalXHR: typeof XMLHttpRequest | undefined
+let originalOpen: typeof XMLHttpRequest.prototype.open | undefined
+let originalSend: typeof XMLHttpRequest.prototype.send | undefined
+let originalSetRequestHeader: typeof XMLHttpRequest.prototype.setRequestHeader | undefined
+
+// Initialize only in browser environment
+function ensureInitialized() {
+  if (typeof window === 'undefined') return false
+  if (!OriginalXHR) {
+    OriginalXHR = window.XMLHttpRequest
+    originalOpen = OriginalXHR.prototype.open
+    originalSend = OriginalXHR.prototype.send
+    originalSetRequestHeader = OriginalXHR.prototype.setRequestHeader
+  }
+  return true
+}
 
 /**
  * Create HAR entry from XHR data
@@ -155,10 +167,15 @@ function parseResponseHeaders(headersString: string) {
  * Install XHR interceptor
  */
 export function installXhrInterceptor(config: XhrConfig): () => void {
+  // Skip in non-browser environment (e.g., SSR)
+  if (!ensureInitialized()) {
+    return () => {} // Return no-op uninstall function
+  }
+
   const requestDataMap = new WeakMap<XMLHttpRequest, XhrRequestData>()
 
   // Override open method
-  OriginalXHR.prototype.open = function (method: string, url: string, ...args: any[]) {
+  OriginalXHR!.prototype.open = function (method: string, url: string, ...args: any[]) {
     const requestData: XhrRequestData = {
       method: method.toUpperCase(),
       url,
@@ -167,20 +184,20 @@ export function installXhrInterceptor(config: XhrConfig): () => void {
     }
     
     requestDataMap.set(this, requestData)
-    return originalOpen.apply(this, [method, url, ...args] as any)
+    return originalOpen!.apply(this, [method, url, ...args] as any)
   }
 
   // Override setRequestHeader method
-  OriginalXHR.prototype.setRequestHeader = function (name: string, value: string) {
+  OriginalXHR!.prototype.setRequestHeader = function (name: string, value: string) {
     const requestData = requestDataMap.get(this)
     if (requestData) {
       requestData.headers[name] = value
     }
-    return originalSetRequestHeader.apply(this, [name, value])
+    return originalSetRequestHeader!.apply(this, [name, value])
   }
 
   // Override send method
-  OriginalXHR.prototype.send = function (body?: any) {
+  OriginalXHR!.prototype.send = function (body?: any) {
     const xhr = this
     const requestData = requestDataMap.get(xhr)
 
@@ -210,13 +227,13 @@ export function installXhrInterceptor(config: XhrConfig): () => void {
       xhr.addEventListener('timeout', onError)
     }
 
-    return originalSend.apply(xhr, [body])
+    return originalSend!.apply(xhr, [body])
   }
 
   // Return uninstall function
   return () => {
-    OriginalXHR.prototype.open = originalOpen
-    OriginalXHR.prototype.send = originalSend
-    OriginalXHR.prototype.setRequestHeader = originalSetRequestHeader
+    OriginalXHR!.prototype.open = originalOpen!
+    OriginalXHR!.prototype.send = originalSend!
+    OriginalXHR!.prototype.setRequestHeader = originalSetRequestHeader!
   }
 }
