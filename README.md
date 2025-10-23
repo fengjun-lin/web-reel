@@ -125,6 +125,33 @@ src/
 
 ## Usage
 
+### Using the npm Package (Recommended)
+
+The recorder SDK is now available as a standalone npm package:
+
+```bash
+npm install @web-reel/recorder
+```
+
+**Quick Start:**
+```typescript
+import { WebReelRecorder } from '@web-reel/recorder'
+
+const recorder = new WebReelRecorder({
+  env: 'test',
+  appId: 1,
+  projectName: 'my-app',
+  deviceId: 'user-123',
+})
+
+// Export session data
+await recorder.exportLog()
+```
+
+**Documentation:**
+- Installation & Usage: See [HOW_TO_USE_RECORDER_PACKAGE.md](./HOW_TO_USE_RECORDER_PACKAGE.md)
+- Publishing Guide: See [packages/recorder/PUBLISH_GUIDE.md](./packages/recorder/PUBLISH_GUIDE.md)
+
 ### Recording Sessions
 
 #### Method 1: Use Test Page (Recommended for development)
@@ -153,8 +180,10 @@ cp -r src/services /path/to/your-project/src/
 ##### Step 2: Install dependencies
 
 ```bash
-npm install rrweb@^1.1.3 idb@^8.0.3 jszip@^3.10.1
+npm install @web-reel/recorder jszip@^3.10.1
 ```
+
+Note: `rrweb` and `idb` are included with `@web-reel/recorder`.
 
 ##### Step 3: Initialize in your app
 

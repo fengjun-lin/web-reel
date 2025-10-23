@@ -1,6 +1,6 @@
 {
   "name": "@web-reel/recorder",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Lightweight session recording SDK based on rrweb",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -22,7 +22,7 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
-  "peerDependencies": {
+  "dependencies": {
     "idb": "^8.0.3",
     "rrweb": "^1.1.3"
   },
@@ -39,10 +39,15 @@
     "monitoring",
     "web-analytics"
   ],
-  "author": "",
+  "author": "fengjun-lin",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/web-reel"
+    "url": "https://github.com/fengjun-lin/web-reel",
+    "directory": "packages/recorder"
+  },
+  "homepage": "https://github.com/fengjun-lin/web-reel#readme",
+  "bugs": {
+    "url": "https://github.com/fengjun-lin/web-reel/issues"
   }
 }

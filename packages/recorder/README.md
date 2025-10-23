@@ -5,8 +5,10 @@ Lightweight session recording SDK based on rrweb
 ## 📦 Installation
 
 ```bash
-npm install @web-reel/recorder rrweb@^1.1.3 idb@^8.0.3
+npm install @web-reel/recorder
 ```
+
+That's it! `rrweb` and `idb` will be automatically installed as dependencies.
 
 ## 🚀 Quick Start
 

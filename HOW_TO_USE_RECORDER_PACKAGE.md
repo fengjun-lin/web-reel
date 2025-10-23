@@ -37,7 +37,7 @@ npm publish --access public
 #### Step 3: Install in any project
 
 ```bash
-npm install @web-reel/recorder rrweb@^1.1.3 idb@^8.0.3
+npm install @web-reel/recorder
 ```
 
 ```typescript
@@ -66,9 +66,10 @@ npm link
 
 ```bash
 cd /path/to/your-project
-npm link @web-reel/recorder --legacy-peer-deps
-npm install rrweb@^1.1.3 idb@^8.0.3
+npm link @web-reel/recorder
 ```
+
+Note: `rrweb` and `idb` are now bundled as dependencies, no need to install separately!
 
 #### Step 3: Import and use
 
