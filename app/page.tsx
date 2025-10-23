@@ -1,9 +1,11 @@
+'use client';
+
 import { InboxOutlined, UploadOutlined } from '@ant-design/icons';
 import { Alert, Button, Card, Divider, Empty, Input, Space, Typography, Upload, message } from 'antd';
 import type { UploadProps } from 'antd';
 import JSZip from 'jszip';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import UploadFlagSwitch from '@/components/UploadFlagSwitch';
 import type { RecordCollection } from '@/recorder';
@@ -20,7 +22,7 @@ interface SessionInfo {
 }
 
 export default function SessionsPage() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [deviceId, setLdap] = useState<string>('');
@@ -136,7 +138,7 @@ export default function SessionsPage() {
   };
 
   const handleViewSession = (sessionId: string) => {
-    navigate(`/replayer/${sessionId}`);
+    router.push(`/replayer/${sessionId}`);
   };
 
   const formatDate = (timestamp: number) => {

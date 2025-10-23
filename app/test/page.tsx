@@ -1,20 +1,28 @@
+'use client';
+
 import { Button, Card, Divider, Space, Typography, message } from 'antd';
 import { useRef, useState } from 'react';
 
-import { WebReelRecorder } from '@/recorder';
+import type { WebReelRecorder as WebReelRecorderType } from '@/recorder';
 import { Env } from '@/types';
 
 const { Title, Text } = Typography;
 
+// Disable static generation for this page (client-side only)
+export const dynamic = 'force-dynamic';
+
 export default function RecorderTestPage() {
-  const recorderRef = useRef<WebReelRecorder | null>(null);
+  const recorderRef = useRef<WebReelRecorderType | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [sessionId, setSessionId] = useState<number>(0);
   const [eventCount, setEventCount] = useState(0);
   const [networkCount, setNetworkCount] = useState(0);
 
-  const initRecorder = () => {
+  const initRecorder = async () => {
     try {
+      // Dynamic import to avoid SSR issues
+      const { WebReelRecorder } = await import('@/recorder');
+
       const recorder = new WebReelRecorder({
         env: Env.TEST,
         deviceId: 'test-device',

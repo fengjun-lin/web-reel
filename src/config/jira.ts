@@ -22,10 +22,10 @@ const STORAGE_KEY = 'web-reel-jira-config';
  */
 export function getEnvConfig(): Partial<JiraConfig> {
   return {
-    apiKey: import.meta.env.VITE_JIRA_API_KEY || '',
-    domain: import.meta.env.VITE_JIRA_DOMAIN || 'sedna-tech.atlassian.net',
-    userEmail: import.meta.env.VITE_JIRA_USER_EMAIL || 'wei.qi.nick@gmail.com',
-    projectKey: import.meta.env.VITE_JIRA_PROJECT_KEY || 'WR',
+    apiKey: process.env.NEXT_PUBLIC_JIRA_API_KEY || '',
+    domain: process.env.NEXT_PUBLIC_JIRA_DOMAIN || 'sedna-tech.atlassian.net',
+    userEmail: process.env.NEXT_PUBLIC_JIRA_USER_EMAIL || 'wei.qi.nick@gmail.com',
+    projectKey: process.env.NEXT_PUBLIC_JIRA_PROJECT_KEY || 'WR',
   };
 }
 
@@ -33,6 +33,11 @@ export function getEnvConfig(): Partial<JiraConfig> {
  * Get Jira configuration from localStorage (runtime config)
  */
 export function getRuntimeConfig(): Partial<JiraConfig> | null {
+  // Check if we're in the browser (client-side)
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+    return null;
+  }
+
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) return null;

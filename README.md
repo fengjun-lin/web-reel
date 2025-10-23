@@ -21,19 +21,20 @@ A lightweight, browser-based session recording and replay tool built with React,
 
 ## Tech Stack
 
-- **Frontend**: React 18 + TypeScript + Vite 7
+- **Frontend**: React 19 + TypeScript + Next.js 16 (App Router)
 - **UI Library**: Ant Design 5
 - **Recording**: rrweb 1.1.3 (stable) + rrweb-player 0.7.14
 - **Storage**: IndexedDB (idb 8.x)
-- **Routing**: React Router 7 (HashRouter)
+- **Routing**: Next.js App Router (file-based routing)
 - **State Management**: React Hooks
 - **Compression**: JSZip 3.x
+- **Bundler**: Turbopack (Next.js 16 default)
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js >= 20.19+ (Vite requirement)
+- Node.js >= 18.17+ (Next.js requirement)
 - npm or pnpm or yarn
 
 ### Installation
@@ -52,7 +53,7 @@ pnpm dev
 npm run dev
 ```
 
-Visit `http://localhost:5174/#/`
+Visit `http://localhost:3000`
 
 ### Build
 
@@ -84,13 +85,22 @@ See detailed deployment instructions: [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT
 
 Quick deploy with one click:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/web-reel&env=VITE_OPENAI_API_KEY&envDescription=OpenAI%20API%20Key%20for%20AI%20analysis%20features&envLink=https://platform.openai.com/api-keys)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/web-reel&env=OPENAI_API_KEY,JIRA_API_KEY,JIRA_USER_EMAIL&envDescription=API%20Keys%20for%20AI%20analysis%20and%20Jira%20integration&envLink=https://platform.openai.com/api-keys)
 
 **Environment Variables Required:**
 
-- `VITE_OPENAI_API_KEY` - OpenAI API key (optional, can be configured at runtime)
-- `VITE_OPENAI_API_BASE` - OpenAI API base URL (optional)
-- `VITE_OPENAI_MODEL` - OpenAI model name (optional)
+Server-side (secure, not exposed to browser):
+
+- `OPENAI_API_KEY` - OpenAI API key (optional, can be configured at runtime)
+- `JIRA_API_KEY` - Jira API token (optional)
+- `JIRA_USER_EMAIL` - Jira user email (optional)
+
+Client-side (exposed to browser):
+
+- `NEXT_PUBLIC_OPENAI_API_BASE` - OpenAI API base URL (optional, default: https://api.openai.com/v1)
+- `NEXT_PUBLIC_OPENAI_MODEL` - OpenAI model name (optional, default: gpt-4o-mini)
+- `NEXT_PUBLIC_JIRA_DOMAIN` - Jira domain (optional)
+- `NEXT_PUBLIC_JIRA_PROJECT_KEY` - Jira project key (optional)
 
 ## Project Structure
 
@@ -491,21 +501,45 @@ await recorder.getDB().clear('responseData');
 
 ## Environment Configuration
 
+### Quick Start
+
+To configure environment variables:
+
+```bash
+# Copy the example file
+cp .env.example .env.local
+
+# Edit with your actual values
+nano .env.local
+```
+
+Or use the quick setup script:
+
+```bash
+./scripts/setup-openai.sh
+```
+
 ### Jira Integration
 
 Web Reel supports creating Jira tickets directly from the Replayer page. To enable this feature, create a `.env.local` file in the project root with the following variables:
 
 ```bash
 # Jira Configuration
-VITE_JIRA_API_KEY=your_jira_api_token_here
-VITE_JIRA_DOMAIN=your-domain.atlassian.net
-VITE_JIRA_USER_EMAIL=your.email@example.com
-VITE_JIRA_PROJECT_KEY=PROJ
+# Server-side only (more secure - not exposed to browser)
+JIRA_API_KEY=your_jira_api_token_here
+JIRA_USER_EMAIL=your.email@example.com
+
+# Client-side (exposed to browser)
+NEXT_PUBLIC_JIRA_DOMAIN=your-domain.atlassian.net
+NEXT_PUBLIC_JIRA_PROJECT_KEY=PROJ
 
 # OpenAI Configuration (Optional - for AI-powered session analysis)
-VITE_OPENAI_API_KEY=sk-your-openai-api-key
-VITE_OPENAI_API_BASE=https://api.openai.com/v1
-VITE_OPENAI_MODEL=gpt-4o-mini
+# Server-side only (more secure)
+OPENAI_API_KEY=sk-your-openai-api-key
+
+# Client-side
+NEXT_PUBLIC_OPENAI_API_BASE=https://api.openai.com/v1
+NEXT_PUBLIC_OPENAI_MODEL=gpt-4o-mini
 ```
 
 **How to get Jira API Token:**

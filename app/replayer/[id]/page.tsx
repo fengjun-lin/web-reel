@@ -1,8 +1,9 @@
+'use client';
+
 import { InboxOutlined } from '@ant-design/icons';
 import { Alert, Button, Card, Modal, Space, Tabs, Typography, Upload, message } from 'antd';
 import type { UploadProps } from 'antd';
-import { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { use, useEffect, useRef, useState } from 'react';
 import type { eventWithTime } from 'rrweb/typings/types';
 import rrwebPlayer from 'rrweb-player';
 import 'rrweb-player/dist/style.css';
@@ -24,8 +25,10 @@ interface SessionData {
   responseData: HarEntry[];
 }
 
-export default function ReplayPage() {
-  const { id } = useParams<{ id: string }>();
+export default function ReplayPage({ params }: { params: Promise<{ id: string }> }) {
+  // Next.js 16: Use React.use() to unwrap the params Promise in client component
+  const { id } = use(params);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<rrwebPlayer | null>(null);
 
