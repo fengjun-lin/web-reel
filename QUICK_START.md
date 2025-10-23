@@ -20,7 +20,7 @@
 
 ```bash
 # 创建 .env.local 文件
-echo 'VITE_OPENAI_API_KEY=sk-你的key' > .env.local
+echo 'OPENAI_API_KEY=sk-你的key' > .env.local
 
 # 重启开发服务器
 npm run dev
@@ -232,7 +232,7 @@ open http://localhost:5173
 
 # 方法 2: 编辑配置文件
 nano .env.local
-# 修改 VITE_OPENAI_API_KEY=sk-新的key
+# 修改 OPENAI_API_KEY=sk-新的key
 # 保存并重启服务器
 
 # 方法 3: 通过 UI 修改（无需重启）
@@ -249,11 +249,11 @@ nano .env.local
 或在浏览器 Console 中：
 
 ```javascript
-// 查看配置来源
+// 查看配置来源（在浏览器控制台中）
 const envConfig = {
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  apiBase: import.meta.env.VITE_OPENAI_API_BASE,
-  model: import.meta.env.VITE_OPENAI_MODEL,
+  apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
+  apiBase: process.env.NEXT_PUBLIC_OPENAI_API_BASE,
+  model: process.env.NEXT_PUBLIC_OPENAI_MODEL,
 };
 
 const localStorageConfig = JSON.parse(localStorage.getItem('web-reel-openai-config') || 'null');

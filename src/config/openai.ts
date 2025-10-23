@@ -21,9 +21,9 @@ const STORAGE_KEY = 'web-reel-openai-config';
  */
 export function getEnvConfig(): Partial<OpenAIConfig> {
   return {
-    apiKey: import.meta.env.VITE_OPENAI_API_KEY || '',
-    apiBase: import.meta.env.VITE_OPENAI_API_BASE || 'https://api.openai.com/v1',
-    model: import.meta.env.VITE_OPENAI_MODEL || 'gpt-4o-mini',
+    apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
+    apiBase: process.env.NEXT_PUBLIC_OPENAI_API_BASE || 'https://api.openai.com/v1',
+    model: process.env.NEXT_PUBLIC_OPENAI_MODEL || 'gpt-4o-mini',
   };
 }
 
@@ -31,6 +31,11 @@ export function getEnvConfig(): Partial<OpenAIConfig> {
  * Get OpenAI configuration from localStorage (runtime config)
  */
 export function getRuntimeConfig(): Partial<OpenAIConfig> | null {
+  // Check if we're in the browser (client-side)
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+    return null;
+  }
+
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) return null;

@@ -29,7 +29,7 @@
 
 ```bash
 # 在项目根目录创建 .env.local
-echo "VITE_OPENAI_API_KEY=sk-你的新key" > .env.local
+echo "OPENAI_API_KEY=sk-你的新key" > .env.local
 
 # 重启开发服务器
 npm run dev
@@ -105,7 +105,7 @@ fi
 
 ```env
 # .env.local （不要提交！）
-VITE_OPENAI_API_KEY=sk-你的开发key
+OPENAI_API_KEY=sk-你的开发key
 ```
 
 ### 生产环境

@@ -17,9 +17,9 @@ if [ -f ".env.local" ]; then
     
     # Read and mask API key
     while IFS= read -r line; do
-        if [[ $line =~ ^VITE_OPENAI_API_KEY=(.+)$ ]]; then
+        if [[ $line =~ ^OPENAI_API_KEY=(.+)$ ]]; then
             key="${BASH_REMATCH[1]}"
-            echo "VITE_OPENAI_API_KEY=${key:0:10}...${key: -4} (已隐藏)"
+            echo "OPENAI_API_KEY=${key:0:10}...${key: -4} (已隐藏)"
         elif [[ $line =~ ^# ]] || [[ -z $line ]]; then
             # Skip comments and empty lines
             :
@@ -42,8 +42,8 @@ echo ""
 echo "🌐 浏览器配置（localStorage）："
 
 # Check if there's a running dev server
-if lsof -i:5173 > /dev/null 2>&1; then
-    echo "✅ 开发服务器正在运行 (http://localhost:5173)"
+if lsof -i:3000 > /dev/null 2>&1; then
+    echo "✅ 开发服务器正在运行 (http://localhost:3000)"
     echo ""
     echo "检查浏览器 localStorage："
     echo "   1. 打开浏览器开发者工具 (F12)"

@@ -49,7 +49,7 @@ Web-Reel 现在集成了 AI 驱动的会话分析功能，可以自动分析录�
 2. 添加你的 API Key：
 
    ```env
-   VITE_OPENAI_API_KEY=sk-你的实际key
+   OPENAI_API_KEY=sk-你的实际key
    ```
 
 3. 重启开发服务器：
@@ -270,12 +270,12 @@ src/
 
 ```env
 # 使用代理
-VITE_OPENAI_API_BASE=https://your-proxy.com/v1
-VITE_OPENAI_API_KEY=your-key
+NEXT_PUBLIC_OPENAI_API_BASE=https://your-proxy.com/v1
+OPENAI_API_KEY=your-key
 
 # 使用 Azure OpenAI
-VITE_OPENAI_API_BASE=https://your-resource.openai.azure.com/openai/deployments/your-deployment
-VITE_OPENAI_API_KEY=your-azure-key
+NEXT_PUBLIC_OPENAI_API_BASE=https://your-resource.openai.azure.com/openai/deployments/your-deployment
+OPENAI_API_KEY=your-azure-key
 ```
 
 ### 自定义分析参数

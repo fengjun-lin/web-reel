@@ -21,13 +21,12 @@ You have two ways to configure your OpenAI API key:
 2. **Add your API key** to `.env.local`:
 
    ```env
-   VITE_OPENAI_API_KEY=sk-your-actual-key-here
+   # Server-side only (more secure - not exposed to browser)
+   OPENAI_API_KEY=sk-your-actual-key-here
 
-   # Optional: Custom API base URL (for proxy)
-   # VITE_OPENAI_API_BASE=https://api.openai.com/v1
-
-   # Optional: Model selection (default: gpt-4o-mini)
-   # VITE_OPENAI_MODEL=gpt-4o-mini
+   # Client-side (optional - defaults provided)
+   # NEXT_PUBLIC_OPENAI_API_BASE=https://api.openai.com/v1
+   # NEXT_PUBLIC_OPENAI_MODEL=gpt-4o-mini
    ```
 
 3. **Restart the dev server** for changes to take effect:
@@ -136,7 +135,7 @@ Protect yourself from unexpected costs:
 
 **Solution**: Make sure you've either:
 
-- Created `.env.local` with `VITE_OPENAI_API_KEY=sk-...` and restarted dev server
+- Created `.env.local` with `OPENAI_API_KEY=sk-...` and restarted dev server
 - Configured the API key through the UI Settings
 
 ### "Invalid API key" error
@@ -173,7 +172,7 @@ Protect yourself from unexpected costs:
 **Solution**:
 
 - Check your internet connection
-- If using a proxy, configure `VITE_OPENAI_API_BASE`
+- If using a proxy, configure `NEXT_PUBLIC_OPENAI_API_BASE`
 - Check firewall settings
 
 ## Example Configuration Files
@@ -182,14 +181,16 @@ Protect yourself from unexpected costs:
 
 ```env
 # OpenAI Configuration
-VITE_OPENAI_API_KEY=sk-proj-abc123...
+# Server-side only (more secure)
+OPENAI_API_KEY=sk-proj-abc123...
+
+# Client-side (optional)
+# NEXT_PUBLIC_OPENAI_API_BASE=https://api.openai.com/v1
+# NEXT_PUBLIC_OPENAI_MODEL=gpt-4o-mini
 
 # Optional: Use Azure OpenAI instead
-# VITE_OPENAI_API_BASE=https://your-resource.openai.azure.com/openai/deployments/your-deployment
-# VITE_OPENAI_MODEL=gpt-4
-
-# Optional: Use different model
-# VITE_OPENAI_MODEL=gpt-4
+# NEXT_PUBLIC_OPENAI_API_BASE=https://your-resource.openai.azure.com/openai/deployments/your-deployment
+# NEXT_PUBLIC_OPENAI_MODEL=gpt-4
 ```
 
 ### Runtime Config (Production)
@@ -216,12 +217,12 @@ If you're using a proxy or Azure OpenAI:
 
 ```env
 # Azure OpenAI
-VITE_OPENAI_API_BASE=https://your-resource.openai.azure.com/openai/deployments/your-deployment
-VITE_OPENAI_API_KEY=your-azure-key
+NEXT_PUBLIC_OPENAI_API_BASE=https://your-resource.openai.azure.com/openai/deployments/your-deployment
+OPENAI_API_KEY=your-azure-key
 
 # Custom Proxy
-VITE_OPENAI_API_BASE=https://your-proxy.com/v1
-VITE_OPENAI_API_KEY=your-key
+NEXT_PUBLIC_OPENAI_API_BASE=https://your-proxy.com/v1
+OPENAI_API_KEY=your-key
 ```
 
 ## Need Help?

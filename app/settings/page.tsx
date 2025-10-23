@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Settings Page
  * Wrapper for OpenAI settings and other app configurations

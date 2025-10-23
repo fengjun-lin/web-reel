@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Next.js
+.next/
+out/
+
+# Environment variables (keep .env.example for reference)
+.env*.local
+
 # Cache files
 .eslintcache
 

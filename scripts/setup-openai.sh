@@ -81,14 +81,12 @@ cat > .env.local << EOF
 # OpenAI API Configuration
 # This file is ignored by git for security
 
-# API Key (required)
-VITE_OPENAI_API_KEY=$API_KEY
+# Server-side only (more secure - not exposed to browser)
+OPENAI_API_KEY=$API_KEY
 
-# API Base URL (optional)
-VITE_OPENAI_API_BASE=$API_BASE
-
-# Model (optional)
-VITE_OPENAI_MODEL=$MODEL
+# Client-side (optional - defaults provided)
+NEXT_PUBLIC_OPENAI_API_BASE=$API_BASE
+NEXT_PUBLIC_OPENAI_MODEL=$MODEL
 EOF
 
 echo ""

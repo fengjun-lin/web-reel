@@ -31,11 +31,20 @@ This document describes how to deploy the Web Reel project to Vercel.
 4. **Configure Environment Variables**
    Click "Environment Variables" and add the following:
 
-   | Variable Name          | Value                       | Description                    |
-   | ---------------------- | --------------------------- | ------------------------------ |
-   | `VITE_OPENAI_API_KEY`  | `sk-your-api-key`           | OpenAI API key (required)      |
-   | `VITE_OPENAI_API_BASE` | `https://api.openai.com/v1` | OpenAI API base URL (optional) |
-   | `VITE_OPENAI_MODEL`    | `gpt-4o-mini`               | OpenAI model name (optional)   |
+   **Server-side (secure - recommended):**
+   | Variable Name | Value | Description |
+   | ------------------ | ----------------- | ----------------------------------- |
+   | `OPENAI_API_KEY` | `sk-your-api-key` | OpenAI API key (server-side only) |
+   | `JIRA_API_KEY` | `your-jira-token` | Jira API token (optional) |
+   | `JIRA_USER_EMAIL` | `your@email.com` | Jira user email (optional) |
+
+   **Client-side (optional - defaults provided):**
+   | Variable Name | Value | Description |
+   | -------------------------------- | --------------------------- | ------------------------------ |
+   | `NEXT_PUBLIC_OPENAI_API_BASE` | `https://api.openai.com/v1` | OpenAI API base URL (optional) |
+   | `NEXT_PUBLIC_OPENAI_MODEL` | `gpt-4o-mini` | OpenAI model name (optional) |
+   | `NEXT_PUBLIC_JIRA_DOMAIN` | `your-domain.atlassian.net` | Jira domain (optional) |
+   | `NEXT_PUBLIC_JIRA_PROJECT_KEY` | `PROJ` | Jira project key (optional) |
 
 5. **Deploy**
    - Click the "Deploy" button
@@ -72,14 +81,14 @@ This document describes how to deploy the Web Reel project to Vercel.
 
    ```bash
    # Production environment
-   vercel env add VITE_OPENAI_API_KEY production
-   vercel env add VITE_OPENAI_API_BASE production
-   vercel env add VITE_OPENAI_MODEL production
+   vercel env add OPENAI_API_KEY production
+   vercel env add NEXT_PUBLIC_OPENAI_API_BASE production
+   vercel env add NEXT_PUBLIC_OPENAI_MODEL production
 
    # Preview environment
-   vercel env add VITE_OPENAI_API_KEY preview
-   vercel env add VITE_OPENAI_API_BASE preview
-   vercel env add VITE_OPENAI_MODEL preview
+   vercel env add OPENAI_API_KEY preview
+   vercel env add NEXT_PUBLIC_OPENAI_API_BASE preview
+   vercel env add NEXT_PUBLIC_OPENAI_MODEL preview
    ```
 
 5. **Production Deployment**
@@ -89,21 +98,37 @@ This document describes how to deploy the Web Reel project to Vercel.
 
 ## Environment Variables Explained
 
-### VITE_OPENAI_API_KEY (Required)
+### Server-side Variables (Secure)
+
+#### OPENAI_API_KEY (Optional but recommended)
 
 - OpenAI API key
 - How to get: Visit [OpenAI Platform](https://platform.openai.com/api-keys) to create a new API Key
 - Format: `sk-xxxxxxxxxxxxxxxxxxxxxx`
-- **Note**: Even without this environment variable, users can configure the API Key in the app's Settings page (stored in browser localStorage)
+- **Security**: Stored server-side only, not exposed to browser
+- **Note**: Users can also configure the API Key in the app's Settings page (stored in browser localStorage)
 
-### VITE_OPENAI_API_BASE (Optional)
+#### JIRA_API_KEY (Optional)
+
+- Jira API token for creating tickets
+- How to get: Visit [Atlassian API Tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
+- **Security**: Server-side only
+
+#### JIRA_USER_EMAIL (Optional)
+
+- Jira account email
+- Required if JIRA_API_KEY is set
+
+### Client-side Variables (Optional)
+
+#### NEXT_PUBLIC_OPENAI_API_BASE (Optional)
 
 - OpenAI API base URL
 - Default value: `https://api.openai.com/v1`
 - Use case: If using a proxy or compatible API service, you can modify this value
 - Example: `https://your-proxy.com/v1`
 
-### VITE_OPENAI_MODEL (Optional)
+#### NEXT_PUBLIC_OPENAI_MODEL (Optional)
 
 - OpenAI model name
 - Default value: `gpt-4o-mini`
@@ -165,7 +190,8 @@ Visit `http://localhost:4173` to see the build result.
 
 **Solution**:
 
-- Ensure environment variable names start with `VITE_`
+- Server-side variables: no prefix (e.g., `OPENAI_API_KEY`)
+- Client-side variables: must start with `NEXT_PUBLIC_` prefix (e.g., `NEXT_PUBLIC_OPENAI_MODEL`)
 - Configure environment variables correctly in Vercel Dashboard
 - Redeploy project (changes to environment variables require a rebuild)
 

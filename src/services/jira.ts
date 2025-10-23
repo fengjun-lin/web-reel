@@ -24,27 +24,14 @@ export interface CreateTicketResult {
  * Create a Jira client instance
  */
 function createJiraClient(): Version3Client {
-  const config = getJiraConfig();
-
-  // In development, use Vite proxy to avoid CORS issues
-  // In production, use direct API (requires backend support)
-  const isDevelopment = import.meta.env.DEV;
-  const host = isDevelopment
-    ? 'http://localhost:5173/api/jira' // Use Vite proxy
-    : `https://${config.domain}`; // Direct API in production
+  // Use Next.js API route proxy to avoid CORS issues and secure credentials
+  const host = '/api/jira'; // Next.js API route handles authentication server-side
 
   return new Version3Client({
     host,
-    // In development, auth is handled by Vite proxy
-    // In production, we need to provide auth credentials
-    authentication: isDevelopment
-      ? undefined
-      : {
-          basic: {
-            email: config.userEmail,
-            apiToken: config.apiKey,
-          },
-        },
+    // Authentication is handled by Next.js API route server-side
+    // No need to provide credentials here (more secure)
+    authentication: undefined,
   });
 }
 

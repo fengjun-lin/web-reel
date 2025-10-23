@@ -6,7 +6,17 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default [
-  { ignores: ['dist', 'legacy/**/*'] }, // legacy is read-only reference
+  {
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      '**/.next/**',
+      '**/*.d.ts',
+      '**/*.d.mts',
+      'legacy/**/*',
+      'tsconfig*.json',
+    ],
+  }, // Ignore generated files, build outputs, and type definitions
   {
     // Config files (Node.js environment)
     files: ['*.config.{js,ts}', 'eslint.config.js', 'scripts/**/*.{js,ts}'],
@@ -28,11 +38,14 @@ export default [
     },
   },
   {
-    // Application files (Browser environment)
-    files: ['src/**/*.{ts,tsx}', 'packages/**/*.{ts,tsx}'],
+    // Application files (Browser environment with Next.js)
+    files: ['src/**/*.{ts,tsx}', 'packages/**/*.{ts,tsx}', 'app/**/*.{ts,tsx}'],
     languageOptions: {
       ecmaVersion: 'latest',
-      globals: globals.browser,
+      globals: {
+        ...globals.browser,
+        ...globals.node, // Next.js uses process.env in client code
+      },
       parser: tseslint.parser,
       parserOptions: { project: false, ecmaFeatures: { jsx: true } },
     },

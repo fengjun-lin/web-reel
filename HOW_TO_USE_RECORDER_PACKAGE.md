@@ -345,8 +345,8 @@ export default function RootLayout({ children }) {
 ```typescript
 const recorder = new WebReelRecorder({
   env: process.env.NODE_ENV === 'production' ? 'online' : 'test',
-  appId: parseInt(process.env.VITE_APP_ID || '1'),
-  projectName: process.env.VITE_PROJECT_NAME || 'my-app',
+  appId: parseInt(process.env.NEXT_PUBLIC_APP_ID || '1'),
+  projectName: process.env.NEXT_PUBLIC_PROJECT_NAME || 'my-app',
   deviceId: getUserId(),
   disabledDownLoad: process.env.NODE_ENV === 'production',
 });

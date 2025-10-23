@@ -125,8 +125,8 @@ Additional Information:
               <code>.env.local</code> file.
             </Text>
             <Text type="secondary" style={{ fontSize: '12px' }}>
-              Required environment variables: VITE_JIRA_API_KEY, VITE_JIRA_DOMAIN, VITE_JIRA_USER_EMAIL,
-              VITE_JIRA_PROJECT_KEY
+              Required environment variables: JIRA_API_KEY, JIRA_USER_EMAIL (server-side), NEXT_PUBLIC_JIRA_DOMAIN,
+              NEXT_PUBLIC_JIRA_PROJECT_KEY (client-side)
             </Text>
           </Space>
         </div>
