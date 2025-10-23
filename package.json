@@ -12,7 +12,7 @@
     "build:recorder": "cd packages/recorder && npm run build",
     "dev:recorder": "cd packages/recorder && npm run dev",
     "build:all": "npm run build:recorder && npm run build",
-    "clean": "rm -rf node_modules packages/*/node_modules apps/*/node_modules packages/*/dist"
+    "clean": "rm -rf node_modules packages/*/node_modules apps/*/node_modules packages/*/dist",
     "prepare": "husky install"
   },
   "lint-staged": {
