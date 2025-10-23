@@ -22,7 +22,10 @@
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
     "antd": "^5.27.4",
+    "cors": "^2.8.5",
     "dayjs": "^1.11.18",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
     "idb": "^8.0.3",
     "jira.js": "^5.2.2",
     "jszip": "^3.10.1",

@@ -3,71 +3,68 @@
  * Allows users to create Jira tickets with session data context
  */
 
-import { useState } from 'react'
-import { Modal, Form, Input, Button, message, Space, Typography } from 'antd'
-import { CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons'
-import { createJiraTicket } from '@/services/jira'
-import { isJiraConfigured } from '@/config/jira'
+import { CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { Modal, Form, Input, Button, message, Space, Typography } from 'antd';
+import { useState } from 'react';
 
-const { TextArea } = Input
-const { Text, Link } = Typography
+import { isJiraConfigured } from '@/config/jira';
+import { createJiraTicket } from '@/services/jira';
+
+const { TextArea } = Input;
+const { Text, Link } = Typography;
 
 interface CreateJiraModalProps {
-  visible: boolean
-  onClose: () => void
-  sessionId?: string
+  visible: boolean;
+  onClose: () => void;
+  sessionId?: string;
 }
 
-export default function CreateJiraModal({
-  visible,
-  onClose,
-  sessionId,
-}: CreateJiraModalProps) {
-  const [form] = Form.useForm()
-  const [loading, setLoading] = useState(false)
+export default function CreateJiraModal({ visible, onClose, sessionId }: CreateJiraModalProps) {
+  const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
   const [createdTicket, setCreatedTicket] = useState<{
-    issueKey: string
-    issueUrl: string
-  } | null>(null)
+    issueKey: string;
+    issueUrl: string;
+  } | null>(null);
 
   // Check if Jira is configured
-  const jiraConfigured = isJiraConfigured()
+  const jiraConfigured = isJiraConfigured();
 
   // Handle form submission
   const handleSubmit = async () => {
     try {
-      const values = await form.validateFields()
-      setLoading(true)
+      const values = await form.validateFields();
+      setLoading(true);
 
       const result = await createJiraTicket({
         summary: values.summary,
         description: values.description,
-      })
+      });
 
       if (result.success && result.issueKey && result.issueUrl) {
-        message.success(`Jira ticket ${result.issueKey} created successfully!`)
+        message.success(`Jira ticket ${result.issueKey} created successfully!`);
         setCreatedTicket({
           issueKey: result.issueKey,
           issueUrl: result.issueUrl,
-        })
+        });
         // Don't close immediately to show success message
       } else {
-        message.error(`Failed to create Jira ticket: ${result.error || 'Unknown error'}`)
+        message.error(`Failed to create Jira ticket: ${result.error || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('Failed to create Jira ticket:', error)
-      message.error('Failed to create Jira ticket. Please check your configuration.')
+      console.error('Failed to create Jira ticket:', error);
+      message.error('Failed to create Jira ticket. Please check your configuration.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Handle modal close
   const handleClose = () => {
-    form.resetFields()
-    setCreatedTicket(null)
-    onClose()
-  }
+    form.resetFields();
+    setCreatedTicket(null);
+    onClose();
+  };
 
   // Initialize form with default values
   const initialValues = {
@@ -90,7 +87,7 @@ Additional Information:
 - Browser: [Browser name and version]
 - Environment: [Development/Staging/Production]
 - Timestamp: ${new Date().toISOString()}`,
-  }
+  };
 
   return (
     <Modal
@@ -113,12 +110,7 @@ Additional Information:
         ) : (
           <Space>
             <Button onClick={handleClose}>Cancel</Button>
-            <Button
-              type="primary"
-              onClick={handleSubmit}
-              loading={loading}
-              disabled={!jiraConfigured}
-            >
+            <Button type="primary" onClick={handleSubmit} loading={loading} disabled={!jiraConfigured}>
               Create Ticket
             </Button>
           </Space>
@@ -129,12 +121,12 @@ Additional Information:
         <div style={{ marginBottom: 16 }}>
           <Space direction="vertical" style={{ width: '100%' }}>
             <Text type="warning">
-              <ExclamationCircleOutlined /> Jira is not configured. Please set up your Jira
-              credentials in <code>.env.local</code> file.
+              <ExclamationCircleOutlined /> Jira is not configured. Please set up your Jira credentials in{' '}
+              <code>.env.local</code> file.
             </Text>
             <Text type="secondary" style={{ fontSize: '12px' }}>
-              Required environment variables: VITE_JIRA_API_KEY, VITE_JIRA_DOMAIN,
-              VITE_JIRA_USER_EMAIL, VITE_JIRA_PROJECT_KEY
+              Required environment variables: VITE_JIRA_API_KEY, VITE_JIRA_DOMAIN, VITE_JIRA_USER_EMAIL,
+              VITE_JIRA_PROJECT_KEY
             </Text>
           </Space>
         </div>
@@ -143,9 +135,7 @@ Additional Information:
       {createdTicket ? (
         <Space direction="vertical" style={{ width: '100%' }} size="large">
           <div style={{ textAlign: 'center', padding: '24px 0' }}>
-            <CheckCircleOutlined
-              style={{ fontSize: 48, color: '#52c41a', marginBottom: 16 }}
-            />
+            <CheckCircleOutlined style={{ fontSize: 48, color: '#52c41a', marginBottom: 16 }} />
             <div>
               <Text strong style={{ fontSize: 16, display: 'block', marginBottom: 8 }}>
                 Ticket Created Successfully!
@@ -160,12 +150,7 @@ Additional Information:
           </div>
         </Space>
       ) : (
-        <Form
-          form={form}
-          layout="vertical"
-          initialValues={initialValues}
-          disabled={!jiraConfigured}
-        >
+        <Form form={form} layout="vertical" initialValues={initialValues} disabled={!jiraConfigured}>
           <Form.Item
             name="summary"
             label="Summary"
@@ -185,19 +170,14 @@ Additional Information:
               { min: 10, message: 'Description must be at least 10 characters' },
             ]}
           >
-            <TextArea
-              rows={12}
-              placeholder="Detailed description of the issue including steps to reproduce"
-            />
+            <TextArea rows={12} placeholder="Detailed description of the issue including steps to reproduce" />
           </Form.Item>
 
           <Text type="secondary" style={{ fontSize: '12px' }}>
-            This will create a Bug ticket in the WR project. You can edit the fields above
-            before creating the ticket.
+            This will create a Bug ticket in the WR project. You can edit the fields above before creating the ticket.
           </Text>
         </Form>
       )}
     </Modal>
-  )
+  );
 }
-

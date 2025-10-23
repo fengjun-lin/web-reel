@@ -3,11 +3,11 @@
  * Allows users to configure OpenAI API key at runtime
  */
 
-import { CheckCircleOutlined, CloseCircleOutlined, EyeInvisibleOutlined, EyeOutlined } from '@ant-design/icons'
-import { Alert, Button, Card, Divider, Form, Input, Space, Spin, Tabs, Typography, message } from 'antd'
-import { useState } from 'react'
+import { CheckCircleOutlined, CloseCircleOutlined, EyeInvisibleOutlined, EyeOutlined } from '@ant-design/icons';
+import { Alert, Button, Card, Divider, Form, Input, Space, Spin, Tabs, Typography, message } from 'antd';
+import { useState } from 'react';
 
-import ConfigViewer from '@/components/ConfigViewer'
+import ConfigViewer from '@/components/ConfigViewer';
 import {
   clearRuntimeConfig,
   getOpenAIConfig,
@@ -15,26 +15,26 @@ import {
   isOpenAIConfigured,
   saveRuntimeConfig,
   validateApiKey,
-} from '@/config/openai'
-import { testConnection } from '@/services/openai'
+} from '@/config/openai';
+import { testConnection } from '@/services/openai';
 
-const { Title, Text, Paragraph, Link } = Typography
+const { Title, Text, Paragraph, Link } = Typography;
 
 export default function OpenAISettings() {
-  const [form] = Form.useForm()
-  const [showApiKey, setShowApiKey] = useState(false)
-  const [testing, setTesting] = useState(false)
-  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
+  const [form] = Form.useForm();
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
-  const isConfigured = isOpenAIConfigured()
-  const runtimeConfig = getRuntimeConfig()
+  const isConfigured = isOpenAIConfigured();
+  const runtimeConfig = getRuntimeConfig();
 
   const handleSave = async (values: any) => {
     try {
       // Validate API key format
       if (values.apiKey && !validateApiKey(values.apiKey)) {
-        message.error('Invalid API key format. OpenAI keys should start with "sk-".')
-        return
+        message.error('Invalid API key format. OpenAI keys should start with "sk-".');
+        return;
       }
 
       // Save configuration
@@ -42,60 +42,60 @@ export default function OpenAISettings() {
         apiKey: values.apiKey,
         apiBase: values.apiBase || 'https://api.openai.com/v1',
         model: values.model || 'gpt-4o-mini',
-      })
+      });
 
-      message.success('Configuration saved successfully!')
-      setTestResult(null)
+      message.success('Configuration saved successfully!');
+      setTestResult(null);
     } catch (error) {
-      console.error('Failed to save configuration:', error)
-      message.error('Failed to save configuration')
+      console.error('Failed to save configuration:', error);
+      message.error('Failed to save configuration');
     }
-  }
+  };
 
   const handleTest = async () => {
     try {
-      setTesting(true)
-      setTestResult(null)
+      setTesting(true);
+      setTestResult(null);
 
-      const result = await testConnection()
-      setTestResult(result)
+      const result = await testConnection();
+      setTestResult(result);
 
       if (result.success) {
-        message.success('Connection test successful!')
+        message.success('Connection test successful!');
       } else {
-        message.error('Connection test failed')
+        message.error('Connection test failed');
       }
     } catch (error) {
-      console.error('Test failed:', error)
+      console.error('Test failed:', error);
       setTestResult({
         success: false,
         message: error instanceof Error ? error.message : 'Unknown error',
-      })
+      });
     } finally {
-      setTesting(false)
+      setTesting(false);
     }
-  }
+  };
 
   const handleClear = () => {
-    clearRuntimeConfig()
-    form.resetFields()
-    setTestResult(null)
-    message.success('Configuration cleared')
-  }
+    clearRuntimeConfig();
+    form.resetFields();
+    setTestResult(null);
+    message.success('Configuration cleared');
+  };
 
   const handleLoadCurrent = () => {
     try {
-      const config = getOpenAIConfig()
+      const config = getOpenAIConfig();
       form.setFieldsValue({
         apiKey: config.apiKey,
         apiBase: config.apiBase,
         model: config.model,
-      })
-      message.success('Loaded current configuration')
-    } catch (error) {
-      message.error('No configuration found')
+      });
+      message.success('Loaded current configuration');
+    } catch {
+      message.error('No configuration found');
     }
-  }
+  };
 
   return (
     <div style={{ padding: 24, maxWidth: 900, margin: '0 auto' }}>
@@ -104,8 +104,8 @@ export default function OpenAISettings() {
         <div>
           <Title level={3}>OpenAI Configuration</Title>
           <Paragraph type="secondary">
-            Configure your OpenAI API key to enable AI-powered session analysis. Your API key will be
-            stored locally in your browser and never sent to any server except OpenAI.
+            Configure your OpenAI API key to enable AI-powered session analysis. Your API key will be stored locally in
+            your browser and never sent to any server except OpenAI.
           </Paragraph>
         </div>
 
@@ -130,7 +130,7 @@ export default function OpenAISettings() {
         />
       </Space>
     </div>
-  )
+  );
 
   function renderConfigContent() {
     return (
@@ -181,9 +181,9 @@ export default function OpenAISettings() {
                 {
                   validator: (_, value) => {
                     if (!value || validateApiKey(value)) {
-                      return Promise.resolve()
+                      return Promise.resolve();
                     }
-                    return Promise.reject(new Error('Invalid API key format'))
+                    return Promise.reject(new Error('Invalid API key format'));
                   },
                 },
               ]}
@@ -191,9 +191,7 @@ export default function OpenAISettings() {
             >
               <Input.Password
                 placeholder="sk-..."
-                iconRender={(visible) =>
-                  visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
-                }
+                iconRender={(visible) => (visible ? <EyeOutlined /> : <EyeInvisibleOutlined />)}
                 visibilityToggle={{ visible: showApiKey, onVisibleChange: setShowApiKey }}
               />
             </Form.Item>
@@ -219,9 +217,7 @@ export default function OpenAISettings() {
                 <Button type="primary" htmlType="submit">
                   Save Configuration
                 </Button>
-                {isConfigured && (
-                  <Button onClick={handleLoadCurrent}>Load Current Config</Button>
-                )}
+                {isConfigured && <Button onClick={handleLoadCurrent}>Load Current Config</Button>}
                 {runtimeConfig && (
                   <Button danger onClick={handleClear}>
                     Clear Configuration
@@ -236,8 +232,7 @@ export default function OpenAISettings() {
         <Card title="Test Connection">
           <Space direction="vertical" size="middle" style={{ width: '100%' }}>
             <Paragraph type="secondary">
-              Test your API key to make sure it works correctly. This will send a simple request to
-              OpenAI.
+              Test your API key to make sure it works correctly. This will send a simple request to OpenAI.
             </Paragraph>
 
             <Button
@@ -270,15 +265,10 @@ export default function OpenAISettings() {
           description={
             <Space direction="vertical" size="small">
               <Text>
-                • Your API key is stored locally in your browser's localStorage and never sent to
-                our servers
+                • Your API key is stored locally in your browser&apos;s localStorage and never sent to our servers
               </Text>
-              <Text>
-                • Session data is sent directly to OpenAI's API for analysis (not to our servers)
-              </Text>
-              <Text>
-                • We recommend using a separate API key with usage limits for added security
-              </Text>
+              <Text>• Session data is sent directly to OpenAI&apos;s API for analysis (not to our servers)</Text>
+              <Text>• We recommend using a separate API key with usage limits for added security</Text>
               <Text>
                 • You can revoke your API key anytime at{' '}
                 <Link href="https://platform.openai.com/api-keys" target="_blank">
@@ -300,13 +290,12 @@ export default function OpenAISettings() {
               <Text strong>gpt-4:</Text> ~$0.10-0.30 per analysis
             </Text>
             <Text type="secondary" style={{ fontSize: 12 }}>
-              Actual cost depends on the amount of data being analyzed. We limit analysis to the
-              last 1000 logs and 500 requests to keep costs reasonable.
+              Actual cost depends on the amount of data being analyzed. We limit analysis to the last 1000 logs and 500
+              requests to keep costs reasonable.
             </Text>
           </Space>
         </Card>
       </>
-    )
+    );
   }
 }
-

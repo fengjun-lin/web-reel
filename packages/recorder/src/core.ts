@@ -1,37 +1,20 @@
-import { record } from 'rrweb'
-import type { eventWithTime } from 'rrweb/typings/types'
+import { record } from 'rrweb';
+import type { eventWithTime } from 'rrweb/typings/types';
 
-
-import { DB_INDEX_KEY, DB_TABLE_NAME } from './constants/db'
-import { LOCAL_UPLOADING_FLAG, UNKNOWN_DEVICE_ID } from './constants/session'
-import { exportToFile } from './export'
-import { NetworkInterceptor } from './interceptors'
-import {
-  getUploadLogFlag,
-  setUploadLogFlag,
-  uploadEnvStat,
-  uploadPvStat,
-  uploadSessionLog,
-} from './services/api'
-import { getApiPrefix } from './services/http'
-import type {
-  EnvStat,
-  RecorderOption,
-  SessionLogPayload,
-  UserInfo,
-} from './types'
-import { ErrNoType as ErrNo, UploadFlag as UFlag } from './types'
-import type { HarEntry } from './types/har'
-import { EntryButton } from './ui'
-import { compatibilityJudge } from './utils/browser'
-import { IDB } from './utils/db'
-import { cleanOldData, getRenderEventSize, getResponseDataSize, initDB } from './utils/dbHelper'
-import {
-  clearUploadingSessionId,
-  getUploadingSessionId,
-  setUploadingSessionId,
-} from './utils/session'
-
+import { DB_INDEX_KEY, DB_TABLE_NAME } from './constants/db';
+import { LOCAL_UPLOADING_FLAG, UNKNOWN_DEVICE_ID } from './constants/session';
+import { exportToFile } from './export';
+import { NetworkInterceptor } from './interceptors';
+import { getUploadLogFlag, setUploadLogFlag, uploadEnvStat, uploadPvStat, uploadSessionLog } from './services/api';
+import { getApiPrefix } from './services/http';
+import type { EnvStat, RecorderOption, SessionLogPayload, UserInfo } from './types';
+import { ErrNoType as ErrNo, UploadFlag as UFlag } from './types';
+import type { HarEntry } from './types/har';
+import { EntryButton } from './ui';
+import { compatibilityJudge } from './utils/browser';
+import { IDB } from './utils/db';
+import { cleanOldData, getRenderEventSize, getResponseDataSize, initDB } from './utils/dbHelper';
+import { clearUploadingSessionId, getUploadingSessionId, setUploadingSessionId } from './utils/session';
 
 export interface RecorderConfig extends RecorderOption {
   // Inherited from RecorderOption
@@ -42,45 +25,45 @@ export interface RecorderConfig extends RecorderOption {
  * Records user interactions, console logs, and network requests
  */
 export class WebReelRecorder {
-  private config: RecorderConfig
-  private db!: IDB
-  private sessionId: number // Current session ID (timestamp)
-  private networkInterceptor?: NetworkInterceptor
-  private stopRecordingFn?: () => void
-  private pollUploadFlagTimer?: number
-  private entryButton?: EntryButton
-  private isReady: boolean = false // Whether the recorder is fully initialized
+  private config: RecorderConfig;
+  private db!: IDB;
+  private sessionId: number; // Current session ID (timestamp)
+  private networkInterceptor?: NetworkInterceptor;
+  private stopRecordingFn?: () => void;
+  private pollUploadFlagTimer?: number;
+  private entryButton?: EntryButton;
+  private isReady: boolean = false; // Whether the recorder is fully initialized
 
   constructor(config: RecorderConfig) {
     // Skip initialization in non-browser environments (SSR)
     if (typeof window === 'undefined') {
-      console.warn('[Web-Reel] Skipping initialization in non-browser environment (SSR)')
-      this.config = config
-      this.sessionId = 0
-      return
+      console.warn('[Web-Reel] Skipping initialization in non-browser environment (SSR)');
+      this.config = config;
+      this.sessionId = 0;
+      return;
     }
 
-    this.config = this.parseConfig(config)
-    this.sessionId = 0
+    this.config = this.parseConfig(config);
+    this.sessionId = 0;
 
     // Validate required fields
-    const requiredFields: Array<keyof RecorderConfig> = ['projectName', 'env', 'appId']
-    const unfilledFields = requiredFields.filter((field) => !config?.[field])
-    
+    const requiredFields: Array<keyof RecorderConfig> = ['projectName', 'env', 'appId'];
+    const unfilledFields = requiredFields.filter((field) => !config?.[field]);
+
     if (unfilledFields.length) {
-      console.error(`[Web-Reel] Initialization failed! Missing required fields: ${unfilledFields.join(', ')}`)
-      return
+      console.error(`[Web-Reel] Initialization failed! Missing required fields: ${unfilledFields.join(', ')}`);
+      return;
     }
 
     // Set default device ID if not provided
     if (!this.config.deviceId) {
-      this.config.deviceId = UNKNOWN_DEVICE_ID
+      this.config.deviceId = UNKNOWN_DEVICE_ID;
     }
 
-    console.log('[Web-Reel] Welcome to Web-Reel user behavior recording tool')
+    console.log('[Web-Reel] Welcome to Web-Reel user behavior recording tool');
 
     // Start setup
-    this.setup()
+    this.setup();
   }
 
   /**
@@ -92,7 +75,7 @@ export class WebReelRecorder {
       recordInterval: config.recordInterval ?? 2, // Default 2 days
       disabledDownLoad: config.disabledDownLoad ?? false,
       enableStats: config.enableStats ?? false, // Default disabled
-    }
+    };
   }
 
   /**
@@ -100,54 +83,54 @@ export class WebReelRecorder {
    */
   private async setup(): Promise<void> {
     // Check browser compatibility
-    const isCompatible = compatibilityJudge()
+    const isCompatible = compatibilityJudge();
     if (!isCompatible) {
-      console.warn('[Web-Reel] Current environment does not support this SDK, initialization failed')
-      return
+      console.warn('[Web-Reel] Current environment does not support this SDK, initialization failed');
+      return;
     }
 
     // Initialize database
-    await this.initializeDB()
+    await this.initializeDB();
 
     // Initialize UI entry button
-    this.initializeEntryButton()
+    this.initializeEntryButton();
 
     // Initialize network interceptor
-    this.initializeNetworkInterceptor()
+    this.initializeNetworkInterceptor();
 
     // Initialize rrweb recording
-    this.initializeRecording()
+    this.initializeRecording();
 
     // Setup window unload handler
-    this.setupUnloadHandler()
+    this.setupUnloadHandler();
 
     // Upload statistics (delayed) - only if enabled
     if (this.config.enableStats) {
       setTimeout(async () => {
-        await this.uploadPvStat()
-        await this.uploadEnvStat()
-      }, 1000)
+        await this.uploadPvStat();
+        await this.uploadEnvStat();
+      }, 1000);
 
       // Start polling upload flag - only when stats enabled
-      this.pollUploadFlag(10000)
+      this.pollUploadFlag(10000);
     }
 
     // Mark as ready
-    this.isReady = true
-    console.log('[Web-Reel] Recording started successfully')
+    this.isReady = true;
+    console.log('[Web-Reel] Recording started successfully');
   }
 
   /**
    * Initialize IndexedDB
    */
   private async initializeDB(): Promise<void> {
-    this.sessionId = Date.now()
-    this.db = await initDB(this.config.projectName)
+    this.sessionId = Date.now();
+    this.db = await initDB(this.config.projectName);
 
     // Clean old data
     setTimeout(() => {
-      cleanOldData(this.db, this.sessionId, this.config.recordInterval)
-    }, 1000)
+      cleanOldData(this.db, this.sessionId, this.config.recordInterval);
+    }, 1000);
   }
 
   /**
@@ -155,16 +138,16 @@ export class WebReelRecorder {
    */
   private initializeEntryButton(): void {
     if (this.config.disabledDownLoad) {
-      return
+      return;
     }
 
     this.entryButton = new EntryButton({
       onClick: () => {
-        this.exportLog()
+        this.exportLog();
       },
-    })
+    });
 
-    console.log('[Web-Reel] Entry button initialized')
+    console.log('[Web-Reel] Entry button initialized');
   }
 
   /**
@@ -183,14 +166,14 @@ export class WebReelRecorder {
             [DB_INDEX_KEY]: this.sessionId,
             ...entry,
           },
-          DB_TABLE_NAME.RESPONSE_DATA
-        )
+          DB_TABLE_NAME.RESPONSE_DATA,
+        );
       },
       shouldIgnore: (url) => this.shouldIgnoreUrl(url),
-    })
+    });
 
-    this.networkInterceptor.install()
-    console.log('[Web-Reel] Network interceptor initialized')
+    this.networkInterceptor.install();
+    console.log('[Web-Reel] Network interceptor initialized');
   }
 
   /**
@@ -198,12 +181,12 @@ export class WebReelRecorder {
    */
   private initializeRecording(): void {
     // Create a console interceptor for rrweb < 2.0
-    const consoleRecord = this.createConsoleRecordPlugin()
-    
+    const consoleRecord = this.createConsoleRecordPlugin();
+
     // Track event count for current session
-    let eventCount = 0
-    const MAX_EVENTS = 5000
-    
+    let eventCount = 0;
+    const MAX_EVENTS = 5000;
+
     this.stopRecordingFn = record({
       emit: async (event: eventWithTime) => {
         // Save event to database
@@ -212,46 +195,46 @@ export class WebReelRecorder {
             [DB_INDEX_KEY]: this.sessionId,
             ...event,
           },
-          DB_TABLE_NAME.RENDER_EVENT
-        )
-        
+          DB_TABLE_NAME.RENDER_EVENT,
+        );
+
         // Increment counter and check if we need to clean up old events
-        eventCount++
+        eventCount++;
         if (eventCount > MAX_EVENTS) {
           // Delete oldest events to keep only MAX_EVENTS
           try {
             const allEvents = await this.db.getDataByIndexValue(
               DB_TABLE_NAME.RENDER_EVENT,
               DB_INDEX_KEY,
-              this.sessionId
-            )
-            
+              this.sessionId,
+            );
+
             if (allEvents && allEvents.length > MAX_EVENTS) {
               // Sort by timestamp and delete oldest ones
-              const sortedEvents = allEvents.sort((a: any, b: any) => a.timestamp - b.timestamp)
-              const eventsToDelete = sortedEvents.slice(0, allEvents.length - MAX_EVENTS)
-              
+              const sortedEvents = allEvents.sort((a: any, b: any) => a.timestamp - b.timestamp);
+              const eventsToDelete = sortedEvents.slice(0, allEvents.length - MAX_EVENTS);
+
               for (const evt of eventsToDelete) {
-                await this.db.delete(evt.id, DB_TABLE_NAME.RENDER_EVENT)
+                await this.db.delete(evt.id, DB_TABLE_NAME.RENDER_EVENT);
               }
-              
-              console.log(`[Web-Reel] Cleaned up ${eventsToDelete.length} old events (keeping last ${MAX_EVENTS})`)
-              eventCount = MAX_EVENTS
+
+              console.log(`[Web-Reel] Cleaned up ${eventsToDelete.length} old events (keeping last ${MAX_EVENTS})`);
+              eventCount = MAX_EVENTS;
             }
           } catch (error) {
-            console.error('[Web-Reel] Failed to cleanup old events:', error)
+            console.error('[Web-Reel] Failed to cleanup old events:', error);
           }
         }
       },
       // Try both ways to enable console recording
       recordLog: true,
       plugins: consoleRecord ? [consoleRecord] : [],
-    } as any)
+    } as any);
 
     // This will be intercepted by our console recorder
-    console.log('[Web-Reel] rrweb recording initialized with console logging')
+    console.log('[Web-Reel] rrweb recording initialized with console logging');
   }
-  
+
   /**
    * Create console record plugin for rrweb < 2.0
    */
@@ -263,10 +246,9 @@ export class WebReelRecorder {
       warn: console.warn.bind(console),
       error: console.error.bind(console),
       debug: console.debug.bind(console),
-    }
-    
+    };
+
     try {
-      
       const emit = (level: string, ...args: any[]) => {
         // Emit as rrweb plugin event
         const event = {
@@ -280,46 +262,48 @@ export class WebReelRecorder {
             },
           },
           timestamp: Date.now(),
-        }
-        
+        };
+
         // Save to database directly
-        this.db.add(
-          {
-            [DB_INDEX_KEY]: this.sessionId,
-            ...event,
-          },
-          DB_TABLE_NAME.RENDER_EVENT
-        ).catch(() => {
-          // Silently ignore errors to avoid console spam
-        })
-      }
-      
+        this.db
+          .add(
+            {
+              [DB_INDEX_KEY]: this.sessionId,
+              ...event,
+            },
+            DB_TABLE_NAME.RENDER_EVENT,
+          )
+          .catch(() => {
+            // Silently ignore errors to avoid console spam
+          });
+      };
+
       // Intercept console methods
-      ;(console as any).log = (...args: any[]) => {
-        originalConsole.log.apply(console, args)
-        emit('log', ...args)
-      }
-      ;(console as any).info = (...args: any[]) => {
-        originalConsole.info.apply(console, args)
-        emit('info', ...args)
-      }
-      ;(console as any).warn = (...args: any[]) => {
-        originalConsole.warn.apply(console, args)
-        emit('warn', ...args)
-      }
-      ;(console as any).error = (...args: any[]) => {
-        originalConsole.error.apply(console, args)
-        emit('error', ...args)
-      }
-      ;(console as any).debug = (...args: any[]) => {
-        originalConsole.debug.apply(console, args)
-        emit('debug', ...args)
-      }
-      
-      return null // No plugin needed, we handle it manually
-    } catch (error) {
+      (console as any).log = (...args: any[]) => {
+        originalConsole.log.apply(console, args);
+        emit('log', ...args);
+      };
+      (console as any).info = (...args: any[]) => {
+        originalConsole.info.apply(console, args);
+        emit('info', ...args);
+      };
+      (console as any).warn = (...args: any[]) => {
+        originalConsole.warn.apply(console, args);
+        emit('warn', ...args);
+      };
+      (console as any).error = (...args: any[]) => {
+        originalConsole.error.apply(console, args);
+        emit('error', ...args);
+      };
+      (console as any).debug = (...args: any[]) => {
+        originalConsole.debug.apply(console, args);
+        emit('debug', ...args);
+      };
+
+      return null; // No plugin needed, we handle it manually
+    } catch {
       // Silently ignore errors
-      return null
+      return null;
     }
   }
 
@@ -329,68 +313,66 @@ export class WebReelRecorder {
   private setupUnloadHandler(): void {
     window.addEventListener('beforeunload', () => {
       if (this.sessionId === getUploadingSessionId()) {
-        clearUploadingSessionId()
-        localStorage.removeItem(LOCAL_UPLOADING_FLAG)
+        clearUploadingSessionId();
+        localStorage.removeItem(LOCAL_UPLOADING_FLAG);
       }
-    })
+    });
   }
 
   /**
    * Check if URL should be ignored
    */
   private shouldIgnoreUrl(url: string): boolean {
-    const apiPrefix = getApiPrefix(this.config.env)
-    return url.includes(apiPrefix)
+    const apiPrefix = getApiPrefix(this.config.env);
+    return url.includes(apiPrefix);
   }
 
   /**
    * Export all session data as JSON file
    */
   public async exportLog(clearAfterExport: boolean = true): Promise<void> {
-    console.log('[Web-Reel Export] Starting export...')
-    
-    const eventDataMap = await this.db.getByIndexKey(DB_TABLE_NAME.RENDER_EVENT, DB_INDEX_KEY)
-    const responseDataMap = await this.db.getByIndexKey(DB_TABLE_NAME.RESPONSE_DATA, DB_INDEX_KEY)
+    console.log('[Web-Reel Export] Starting export...');
+
+    const eventDataMap = await this.db.getByIndexKey(DB_TABLE_NAME.RENDER_EVENT, DB_INDEX_KEY);
+    const responseDataMap = await this.db.getByIndexKey(DB_TABLE_NAME.RESPONSE_DATA, DB_INDEX_KEY);
 
     // Only export current session to avoid data too large
-    const currentSessionId = String(this.sessionId)
-    const limitedEventDataMap = currentSessionId in eventDataMap 
-      ? { [currentSessionId]: eventDataMap[currentSessionId] } 
-      : {}
-    const limitedResponseDataMap = currentSessionId in responseDataMap
-      ? { [currentSessionId]: responseDataMap[currentSessionId] }
-      : {}
+    const currentSessionId = String(this.sessionId);
+    const limitedEventDataMap =
+      currentSessionId in eventDataMap ? { [currentSessionId]: eventDataMap[currentSessionId] } : {};
+    const limitedResponseDataMap =
+      currentSessionId in responseDataMap ? { [currentSessionId]: responseDataMap[currentSessionId] } : {};
 
     // Count total items
-    let totalEvents = (limitedEventDataMap[currentSessionId] || []).length
-    let totalResponses = (limitedResponseDataMap[currentSessionId] || []).length
-    
+    let totalEvents = (limitedEventDataMap[currentSessionId] || []).length;
+    let totalResponses = (limitedResponseDataMap[currentSessionId] || []).length;
+
     // Limit events to prevent "Invalid string length" error
-    const MAX_EVENTS = 5000
+    const MAX_EVENTS = 5000;
     if (totalEvents > MAX_EVENTS) {
-      console.warn(`[Web-Reel Export] Too many events (${totalEvents}), limiting to last ${MAX_EVENTS}`)
-      limitedEventDataMap[currentSessionId] = limitedEventDataMap[currentSessionId].slice(-MAX_EVENTS)
-      totalEvents = MAX_EVENTS
+      console.warn(`[Web-Reel Export] Too many events (${totalEvents}), limiting to last ${MAX_EVENTS}`);
+      limitedEventDataMap[currentSessionId] = limitedEventDataMap[currentSessionId].slice(-MAX_EVENTS);
+      totalEvents = MAX_EVENTS;
     }
-    
-    console.log(`[Web-Reel Export] Exporting current session: ${totalEvents} events, ${totalResponses} requests`)
+
+    console.log(`[Web-Reel Export] Exporting current session: ${totalEvents} events, ${totalResponses} requests`);
 
     if (totalEvents === 0 && totalResponses === 0) {
-      console.warn('[Web-Reel Export] No data found for current session!')
-      return
+      console.warn('[Web-Reel Export] No data found for current session!');
+      return;
     }
 
-    await exportToFile(limitedEventDataMap, limitedResponseDataMap)
-    
+    await exportToFile(limitedEventDataMap, limitedResponseDataMap);
+
     // Clear exported data after successful export
     if (clearAfterExport) {
-      console.log('[Web-Reel Export] Clearing data...')
+      console.log('[Web-Reel Export] Clearing data...');
       try {
-        await this.db.clearTable(DB_TABLE_NAME.RENDER_EVENT)
-        await this.db.clearTable(DB_TABLE_NAME.RESPONSE_DATA)
-        console.log('[Web-Reel Export] ✅ Data cleared')
+        await this.db.clearTable(DB_TABLE_NAME.RENDER_EVENT);
+        await this.db.clearTable(DB_TABLE_NAME.RESPONSE_DATA);
+        console.log('[Web-Reel Export] ✅ Data cleared');
       } catch (clearError) {
-        console.error('[Web-Reel Export] ❌ Failed to clear data:', clearError)
+        console.error('[Web-Reel Export] ❌ Failed to clear data:', clearError);
       }
     }
   }
@@ -402,17 +384,17 @@ export class WebReelRecorder {
     const pvStat: UserInfo = {
       appId: this.config.appId,
       deviceId: this.config.deviceId,
-    }
-    const apiPrefix = getApiPrefix(this.config.env)
-    await uploadPvStat(apiPrefix, pvStat)
+    };
+    const apiPrefix = getApiPrefix(this.config.env);
+    await uploadPvStat(apiPrefix, pvStat);
   }
 
   /**
    * Upload environment statistics
    */
   private async uploadEnvStat(): Promise<void> {
-    const renderEventSize = await getRenderEventSize(this.db)
-    const responseDataSize = await getResponseDataSize(this.db)
+    const renderEventSize = await getRenderEventSize(this.db);
+    const responseDataSize = await getResponseDataSize(this.db);
 
     const envStat: EnvStat = {
       appId: this.config.appId,
@@ -422,10 +404,10 @@ export class WebReelRecorder {
         requestEventSize: responseDataSize / 1024 / 1024,
       }),
       ua: navigator.userAgent,
-    }
+    };
 
-    const apiPrefix = getApiPrefix(this.config.env)
-    await uploadEnvStat(apiPrefix, envStat)
+    const apiPrefix = getApiPrefix(this.config.env);
+    await uploadEnvStat(apiPrefix, envStat);
   }
 
   /**
@@ -434,91 +416,86 @@ export class WebReelRecorder {
   private pollUploadFlag(delay: number): void {
     // Skip if stats not enabled
     if (!this.config.enableStats) {
-      return
+      return;
     }
 
-    const { appId, deviceId } = this.config
-    const apiPrefix = getApiPrefix(this.config.env)
+    const { appId, deviceId } = this.config;
+    const apiPrefix = getApiPrefix(this.config.env);
 
     if (this.pollUploadFlagTimer) {
-      clearTimeout(this.pollUploadFlagTimer)
+      clearTimeout(this.pollUploadFlagTimer);
     }
 
     const callback = async () => {
       try {
-        const responseData = await getUploadLogFlag(apiPrefix, { appId, deviceId })
+        const responseData = await getUploadLogFlag(apiPrefix, { appId, deviceId });
 
-        if (
-          responseData.errNo !== ErrNo.SUCCESS ||
-          responseData.data.uploadFlag === UFlag.CLOSE
-        ) {
+        if (responseData.errNo !== ErrNo.SUCCESS || responseData.data.uploadFlag === UFlag.CLOSE) {
           // Continue polling
-          this.pollUploadFlagTimer = window.setTimeout(callback, delay)
+          this.pollUploadFlagTimer = window.setTimeout(callback, delay);
         } else {
           // Upload flag is open
           if (!localStorage.getItem(LOCAL_UPLOADING_FLAG)) {
-            localStorage.setItem(LOCAL_UPLOADING_FLAG, 'true')
-            setUploadingSessionId(this.sessionId)
+            localStorage.setItem(LOCAL_UPLOADING_FLAG, 'true');
+            setUploadingSessionId(this.sessionId);
           } else {
             // Another tab is uploading, skip
-            return
+            return;
           }
 
           // Upload session logs
-          await this.uploadSessionLog()
+          await this.uploadSessionLog();
 
           // Close upload flag
           await setUploadLogFlag(apiPrefix, {
             appId,
             deviceId: deviceId!,
             uploadFlag: UFlag.CLOSE,
-          })
+          });
 
           // Clean up
-          this.pollUploadFlagTimer = undefined
-          clearUploadingSessionId()
-          localStorage.removeItem(LOCAL_UPLOADING_FLAG)
+          this.pollUploadFlagTimer = undefined;
+          clearUploadingSessionId();
+          localStorage.removeItem(LOCAL_UPLOADING_FLAG);
         }
       } catch (error) {
         // Silently ignore API errors when backend is not available
-        console.debug('[Web-Reel] Upload flag polling skipped (no backend)', error)
+        console.debug('[Web-Reel] Upload flag polling skipped (no backend)', error);
       }
-    }
+    };
 
-    this.pollUploadFlagTimer = window.setTimeout(callback, delay)
+    this.pollUploadFlagTimer = window.setTimeout(callback, delay);
   }
 
   /**
    * Upload session logs to server
    */
   private async uploadSessionLog(): Promise<void> {
-    const sessionIds = await this.db.getAllIndexKeys(DB_TABLE_NAME.RENDER_EVENT, DB_INDEX_KEY)
-    sessionIds.sort((a, b) => b - a) // Sort descending
+    const sessionIds = await this.db.getAllIndexKeys(DB_TABLE_NAME.RENDER_EVENT, DB_INDEX_KEY);
+    sessionIds.sort((a, b) => b - a); // Sort descending
 
-    const { appId, deviceId } = this.config
-    const apiPrefix = getApiPrefix(this.config.env)
+    const { appId, deviceId } = this.config;
+    const apiPrefix = getApiPrefix(this.config.env);
 
     for (const sessionId of sessionIds) {
       const domData: eventWithTime[] = await this.db.getDataByIndexValue(
         DB_TABLE_NAME.RENDER_EVENT,
         DB_INDEX_KEY,
-        sessionId
-      )
+        sessionId,
+      );
       const networkData: HarEntry[] = await this.db.getDataByIndexValue(
         DB_TABLE_NAME.RESPONSE_DATA,
         DB_INDEX_KEY,
-        sessionId
-      )
+        sessionId,
+      );
 
       // Calculate end time
-      const minTime = 0
-      const lastDomData = domData[domData.length - 1]
-      const lastDomDataTime = lastDomData ? lastDomData.timestamp : minTime
-      const lastNetworkData = networkData[networkData.length - 1]
-      const lastNetworkDataTime = lastNetworkData
-        ? Date.parse(lastNetworkData.startedDateTime)
-        : minTime
-      const endTime = Math.max(lastDomDataTime, lastNetworkDataTime)
+      const minTime = 0;
+      const lastDomData = domData[domData.length - 1];
+      const lastDomDataTime = lastDomData ? lastDomData.timestamp : minTime;
+      const lastNetworkData = networkData[networkData.length - 1];
+      const lastNetworkDataTime = lastNetworkData ? Date.parse(lastNetworkData.startedDateTime) : minTime;
+      const endTime = Math.max(lastDomDataTime, lastNetworkDataTime);
 
       try {
         const payload: SessionLogPayload = {
@@ -529,18 +506,18 @@ export class WebReelRecorder {
           networkData: JSON.stringify(networkData),
           beginTime: sessionId,
           endTime,
-        }
+        };
 
-        const uploadResult = await uploadSessionLog(apiPrefix, payload)
+        const uploadResult = await uploadSessionLog(apiPrefix, payload);
 
         if (uploadResult.errNo === ErrNo.SUCCESS) {
           // Delete uploaded data
-          await this.db.deleteDataByIndexValue(DB_TABLE_NAME.RENDER_EVENT, DB_INDEX_KEY, sessionId)
-          await this.db.deleteDataByIndexValue(DB_TABLE_NAME.RESPONSE_DATA, DB_INDEX_KEY, sessionId)
-          console.log(`[Web-Reel] Session ${sessionId} uploaded successfully`)
+          await this.db.deleteDataByIndexValue(DB_TABLE_NAME.RENDER_EVENT, DB_INDEX_KEY, sessionId);
+          await this.db.deleteDataByIndexValue(DB_TABLE_NAME.RESPONSE_DATA, DB_INDEX_KEY, sessionId);
+          console.log(`[Web-Reel] Session ${sessionId} uploaded successfully`);
         }
       } catch (error) {
-        console.error(`[Web-Reel] Failed to upload session ${sessionId}:`, error)
+        console.error(`[Web-Reel] Failed to upload session ${sessionId}:`, error);
       }
     }
   }
@@ -550,23 +527,23 @@ export class WebReelRecorder {
    */
   public stop(): void {
     if (this.stopRecordingFn) {
-      this.stopRecordingFn()
-      console.log('[Web-Reel] Recording stopped')
+      this.stopRecordingFn();
+      console.log('[Web-Reel] Recording stopped');
     }
 
     if (this.networkInterceptor) {
-      this.networkInterceptor.uninstall()
-      console.log('[Web-Reel] Network interceptor uninstalled')
+      this.networkInterceptor.uninstall();
+      console.log('[Web-Reel] Network interceptor uninstalled');
     }
 
     if (this.pollUploadFlagTimer) {
-      clearTimeout(this.pollUploadFlagTimer)
-      this.pollUploadFlagTimer = undefined
+      clearTimeout(this.pollUploadFlagTimer);
+      this.pollUploadFlagTimer = undefined;
     }
 
     if (this.entryButton) {
-      this.entryButton.destroy()
-      console.log('[Web-Reel] Entry button destroyed')
+      this.entryButton.destroy();
+      console.log('[Web-Reel] Entry button destroyed');
     }
   }
 
@@ -574,23 +551,23 @@ export class WebReelRecorder {
    * Get current session ID
    */
   public getSessionId(): number {
-    return this.sessionId
+    return this.sessionId;
   }
 
   /**
    * Get database instance
    */
   public getDB(): IDB {
-    return this.db
+    return this.db;
   }
 
   /**
    * Check if recorder is fully initialized
    */
   public isInitialized(): boolean {
-    return this.isReady && !!this.db
+    return this.isReady && !!this.db;
   }
 }
 
 // Export for convenience
-export default WebReelRecorder
+export default WebReelRecorder;
