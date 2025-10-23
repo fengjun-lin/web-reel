@@ -12,7 +12,12 @@
     "build:recorder": "pnpm --filter @web-reel/recorder build",
     "dev:recorder": "pnpm --filter @web-reel/recorder dev",
     "build:all": "pnpm --filter @web-reel/recorder build && pnpm build",
-    "clean": "rm -rf node_modules packages/*/node_modules apps/*/node_modules packages/*/dist"
+    "clean": "rm -rf node_modules packages/*/node_modules apps/*/node_modules packages/*/dist",
+    "prepare": "husky install"
+  },
+  "lint-staged": {
+    "*": "prettier --write --ignore-unknown",
+    "*.{js,jsx,ts,tsx}": "eslint --cache --fix"
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
@@ -41,6 +46,8 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.22",
     "globals": "^16.4.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.6",
     "prettier": "^3.6.2",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.0",
