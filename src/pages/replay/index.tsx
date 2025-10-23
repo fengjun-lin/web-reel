@@ -1,5 +1,5 @@
 import { InboxOutlined } from '@ant-design/icons'
-import { Alert, Button, Card, Space, Tabs, Typography, Upload, message } from 'antd'
+import { Alert, Button, Card, Modal, Space, Tabs, Typography, Upload, message } from 'antd'
 import type { UploadProps } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
@@ -7,8 +7,10 @@ import type { eventWithTime } from 'rrweb/typings/types'
 import rrwebPlayer from 'rrweb-player'
 import 'rrweb-player/dist/style.css'
 
+import AIAnalysisPanel from '@/components/AIAnalysisPanel'
 import ConsolePanel from '@/components/ConsolePanel'
 import NetworkPanel from '@/components/NetworkPanel'
+import OpenAISettings from '@/components/OpenAISettings'
 import type { RecordCollection } from '@/recorder'
 import type { LogInfo } from '@/types'
 import type { HarEntry } from '@/types/har'
@@ -31,6 +33,7 @@ export default function ReplayPage() {
   const [loading, setLoading] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [consoleLogs, setConsoleLogs] = useState<LogInfo[]>([])
+  const [showSettings, setShowSettings] = useState(false)
 
   // Load session from sessionStorage on mount
   useEffect(() => {
@@ -244,47 +247,49 @@ export default function ReplayPage() {
           containerRef.current.removeChild(containerRef.current.firstChild)
         }
 
-        // Create new player with v1 correct structure
-        try {
-          const player = new rrwebPlayer({
-            target: containerRef.current,
-            // v1: UI config in props
-            props: {
-              events: sessionData.eventData,
-              width: Math.max(containerRef.current.offsetWidth || 1200, 800),
-              height: 600,
-              autoPlay: false,
-              speed: 1,
-              showController: true,
-              skipInactive: true,
-              inactiveColor: '#D4D4D4', // Customize inactive periods color in progress bar
-              // Enable console log replay
-              replayLog: true,
-            },
-          } as any)
-
-          playerRef.current = player
-
-          // Setup replayer event listeners
-          const replayer = player.getReplayer()
-          if (replayer) {
-            console.log('[Replay] Player initialized successfully')
-          }
-
-          // Listen to time updates
+          // Create new player with v1 correct structure
           try {
-            if (replayer) {
-              replayer.on('ui-update-current-time', (event: any) => {
-                const timestamp = event as number
-                setCurrentTime(timestamp)
-              })
+            const containerWidth = containerRef.current.offsetWidth || 1200
+            
+            const player = new rrwebPlayer({
+              target: containerRef.current,
+              // v1: UI config in props
+              props: {
+                events: sessionData.eventData,
+                width: containerWidth - 2, // Subtract border width
+                height: containerRef.current.offsetHeight - 2 || 600,
+                autoPlay: false,
+                speed: 1,
+                showController: true,
+                skipInactive: true,
+                inactiveColor: '#D4D4D4', // Customize inactive periods color in progress bar
+                // Enable console log replay
+                replayLog: true,
+              },
+            } as any)
 
-              // Enable interaction
-              replayer.enableInteract()
+            playerRef.current = player
+
+            // Setup replayer event listeners
+            const replayer = player.getReplayer()
+            if (replayer) {
+              console.log('[Replay] Player initialized successfully')
+              
+              // Disable interaction in the replayed iframe
+              replayer.disableInteract()
             }
-          } catch (error) {
-            console.debug('[Replay] Failed to setup replayer events:', error)
-          }
+
+            // Listen to time updates
+            try {
+              if (replayer) {
+                replayer.on('ui-update-current-time', (event: any) => {
+                  const timestamp = event as number
+                  setCurrentTime(timestamp)
+                })
+              }
+            } catch (error) {
+              console.debug('[Replay] Failed to setup replayer events:', error)
+            }
         } catch (error) {
           // Only log if it's not a CSS/DOM error
           const errorMsg = error instanceof Error ? error.message : String(error)
@@ -422,7 +427,7 @@ export default function ReplayPage() {
             closable
           />
 
-          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'stretch', minHeight: '750px' }}>
             {/* Player Section */}
             <Card
               title="Session Player"
@@ -433,17 +438,28 @@ export default function ReplayPage() {
                   </Text>
                 )
               }
-              style={{ flex: '0 0 60%', maxWidth: '60%' }}
+              style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+              styles={{ 
+                body: {
+                  flex: 1,
+                  padding: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden'
+                }
+              }}
             >
               <div
                 ref={containerRef}
                 style={{
+                  flex: 1,
                   border: '1px solid #d9d9d9',
                   borderRadius: 4,
-                  minHeight: 600,
-                  maxHeight: 700,
                   backgroundColor: '#f5f5f5',
                   overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  pointerEvents: 'auto', // Will be controlled by rrweb player
                 }}
               />
             </Card>
@@ -452,40 +468,64 @@ export default function ReplayPage() {
             <Card 
               title="Session Details" 
               style={{ 
-                flex: '0 0 calc(40% - 16px)',
-                maxWidth: 'calc(40% - 16px)',
-                maxHeight: '750px'
+                flex: '0 0 45%',
+                maxWidth: '45%',
+                display: 'flex',
+                flexDirection: 'column'
               }}
-              bodyStyle={{ 
-                height: '680px',
-                padding: 0,
-                overflow: 'hidden'
+              styles={{ 
+                body: {
+                  flex: 1,
+                  padding: 0,
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column'
+                }
               }}
             >
               <Tabs
                 defaultActiveKey="logs"
-                style={{ height: '100%' }}
+                style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                tabBarStyle={{ flexShrink: 0, marginBottom: 0, paddingLeft: 16 }}
                 items={[
                   {
                     key: 'logs',
                     label: `Console (${consoleLogs.length})`,
                     children: (
-                      <ConsolePanel 
-                        logs={consoleLogs} 
-                        currentTime={currentTime}
-                        onSeekToTime={handleSeekToTime}
-                      />
+                      <div style={{ height: 'calc(100vh - 300px)', overflow: 'hidden' }}>
+                        <ConsolePanel 
+                          logs={consoleLogs} 
+                          currentTime={currentTime}
+                          onSeekToTime={handleSeekToTime}
+                        />
+                      </div>
                     ),
                   },
                   {
                     key: 'network',
                     label: `Network (${sessionData.responseData.length})`,
                     children: (
-                      <NetworkPanel 
-                        requests={sessionData.responseData} 
-                        currentTime={currentTime}
-                        onSeekToTime={handleSeekToTime}
-                      />
+                      <div style={{ height: 'calc(100vh - 300px)', overflow: 'hidden' }}>
+                        <NetworkPanel 
+                          requests={sessionData.responseData} 
+                          currentTime={currentTime}
+                          onSeekToTime={handleSeekToTime}
+                        />
+                      </div>
+                    ),
+                  },
+                  {
+                    key: 'ai-analysis',
+                    label: '🤖 AI Analysis',
+                    children: (
+                      <div style={{ height: 'calc(100vh - 300px)', overflow: 'hidden' }}>
+                        <AIAnalysisPanel
+                          logs={consoleLogs}
+                          requests={sessionData.responseData}
+                          onOpenSettings={() => setShowSettings(true)}
+                          onSeekToTime={handleSeekToTime}
+                        />
+                      </div>
                     ),
                   },
                 ]}
@@ -494,6 +534,17 @@ export default function ReplayPage() {
           </div>
         </>
       )}
+
+      {/* Settings Modal */}
+      <Modal
+        title="OpenAI Settings"
+        open={showSettings}
+        onCancel={() => setShowSettings(false)}
+        footer={null}
+        width={900}
+      >
+        <OpenAISettings />
+      </Modal>
     </Space>
   )
 }

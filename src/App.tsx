@@ -4,6 +4,7 @@ import { Link, Route, Routes, useLocation } from 'react-router-dom'
 import logo from './assets/logo-reel.png'
 import ReplayPage from './pages/replay'
 import SessionsPage from './pages/sessions'
+import SettingsPage from './pages/settings'
 import RecorderTestPage from './pages/test'
 
 import './App.css'
@@ -18,6 +19,7 @@ export default function App() {
     const path = location.pathname
     if (path === '/') return 'home'
     if (path.startsWith('/replayer')) return 'replayer'
+    if (path === '/settings') return 'settings'
     if (path === '/test') return 'test'
     return 'home'
   }
@@ -44,6 +46,10 @@ export default function App() {
               label: <Link to="/replayer/0">Replayer</Link>,
             },
             {
+              key: 'settings',
+              label: <Link to="/settings">Settings</Link>,
+            },
+            {
               key: 'test',
               label: <Link to="/test">Test</Link>,
             }
@@ -56,6 +62,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<SessionsPage />} />
             <Route path="/replayer/:id" element={<ReplayPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route path="/test" element={<RecorderTestPage />} />
           </Routes>
         </div>
