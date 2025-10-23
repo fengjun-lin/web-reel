@@ -1,0 +1,29 @@
+# Dependencies
+node_modules
+packages/*/node_modules
+
+# Build artifacts
+packages/*/dist
+
+# Development
+.env.local
+.DS_Store
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Memory Bank (optional, uncomment if you don't want to deploy these files)
+# memory-bank/
+
+# Legacy and temp files
+legacy/
+

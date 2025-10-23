@@ -1,0 +1,12 @@
+{
+  "buildCommand": "cd packages/recorder && npm install && cd ../.. && npm run build:all",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
