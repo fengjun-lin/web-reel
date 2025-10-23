@@ -24,9 +24,9 @@ This document describes how to deploy the Web Reel project to Vercel.
 3. **Configure Project**
    - **Framework Preset**: Vite
    - **Root Directory**: `./` (keep default)
-   - **Build Command**: `pnpm build:all`
+   - **Build Command**: `cd packages/recorder && npm install && cd ../.. && npm run build:all`
    - **Output Directory**: `dist`
-   - **Install Command**: `pnpm install`
+   - **Install Command**: `npm install`
 
 4. **Configure Environment Variables**
    Click "Environment Variables" and add the following:
@@ -123,26 +123,34 @@ Once configured, Vercel will automatically build and deploy every time you push 
 Before deploying, you can test the Vercel build locally:
 
 ```bash
-# Install dependencies
-pnpm install
+# Install dependencies (root)
+npm install
+
+# Install recorder package dependencies
+cd packages/recorder && npm install && cd ../..
 
 # Build project (same command as Vercel uses)
-pnpm build:all
+npm run build:all
 
 # Preview build output
-pnpm preview
+npm run preview
 ```
 
 Visit `http://localhost:4173` to see the build result.
 
 ## Troubleshooting
 
-### 1. Build Failed: Recorder package not found
+### 1. pnpm Network Errors (ERR_INVALID_THIS)
+**Cause**: pnpm sometimes has connection issues with npm registry on Vercel's infrastructure
+
+**Solution**: This project is configured to use `npm` instead of `pnpm` for Vercel deployments to avoid network issues. For local development, you can still use pnpm if you prefer.
+
+### 2. Build Failed: Recorder package not found
 **Cause**: Vercel didn't properly build the recorder package in the monorepo
 
-**Solution**: Ensure `buildCommand` in `vercel.json` is set to `pnpm build:all`
+**Solution**: Ensure `buildCommand` in `vercel.json` is set to `cd packages/recorder && npm install && cd ../.. && npm run build:all`
 
-### 2. Environment Variables Not Found at Runtime
+### 3. Environment Variables Not Found at Runtime
 **Cause**: Vite environment variables need to be injected at build time
 
 **Solution**:
@@ -150,12 +158,12 @@ Visit `http://localhost:4173` to see the build result.
 - Configure environment variables correctly in Vercel Dashboard
 - Redeploy project (changes to environment variables require a rebuild)
 
-### 3. Route 404 Errors
+### 4. Route 404 Errors
 **Cause**: SPA routing requires rewrite rules
 
 **Solution**: Rewrite rules are already configured in `vercel.json`, all routes will point to `index.html`
 
-### 4. OpenAI API Call Failures
+### 5. OpenAI API Call Failures
 **Cause**: API Key misconfigured or insufficient balance
 
 **Solution**:
@@ -163,7 +171,7 @@ Visit `http://localhost:4173` to see the build result.
 - Visit [OpenAI Usage](https://platform.openai.com/usage) to check balance
 - Test API connection in app Settings page
 
-### 5. Blank Page After Successful Deployment
+### 6. Blank Page After Successful Deployment
 **Cause**: Possibly a path configuration issue
 
 **Solution**:

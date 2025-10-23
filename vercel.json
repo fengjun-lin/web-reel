@@ -1,7 +1,7 @@
 {
-  "buildCommand": "pnpm build:all",
+  "buildCommand": "cd packages/recorder && npm install && cd ../.. && npm run build:all",
   "outputDirectory": "dist",
-  "installCommand": "pnpm install",
+  "installCommand": "npm install",
   "framework": "vite",
   "rewrites": [
     {
@@ -10,4 +10,3 @@
     }
   ]
 }
-

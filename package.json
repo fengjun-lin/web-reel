@@ -9,9 +9,9 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "build:recorder": "pnpm --filter @web-reel/recorder build",
-    "dev:recorder": "pnpm --filter @web-reel/recorder dev",
-    "build:all": "pnpm --filter @web-reel/recorder build && pnpm build",
+    "build:recorder": "cd packages/recorder && npm run build",
+    "dev:recorder": "cd packages/recorder && npm run dev",
+    "build:all": "npm run build:recorder && npm run build",
     "clean": "rm -rf node_modules packages/*/node_modules apps/*/node_modules packages/*/dist"
   },
   "dependencies": {

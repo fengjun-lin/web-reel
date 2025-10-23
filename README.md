@@ -54,8 +54,12 @@ Visit `http://localhost:5174/#/`
 ### Build
 
 ```bash
+# For local development with pnpm (if you have pnpm installed)
 pnpm build:all
-# or
+
+# For standard npm build (used by Vercel)
+npm install
+cd packages/recorder && npm install && cd ../..
 npm run build:all
 ```
 
