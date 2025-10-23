@@ -9,6 +9,7 @@ import 'rrweb-player/dist/style.css'
 
 import AIAnalysisPanel from '@/components/AIAnalysisPanel'
 import ConsolePanel from '@/components/ConsolePanel'
+import CreateJiraModal from '@/components/CreateJiraModal'
 import NetworkPanel from '@/components/NetworkPanel'
 import OpenAISettings from '@/components/OpenAISettings'
 import type { RecordCollection } from '@/recorder'
@@ -34,6 +35,7 @@ export default function ReplayPage() {
   const [currentTime, setCurrentTime] = useState(0)
   const [consoleLogs, setConsoleLogs] = useState<LogInfo[]>([])
   const [showSettings, setShowSettings] = useState(false)
+  const [showJiraModal, setShowJiraModal] = useState(false)
 
   // Load session from sessionStorage on mount
   useEffect(() => {
@@ -382,11 +384,20 @@ export default function ReplayPage() {
             <Text type="secondary">Session ID: {id}</Text>
           )}
         </div>
-        <Upload beforeUpload={handleUpload} accept=".json,.txt" showUploadList={false}>
-          <Button type="primary" icon={<InboxOutlined />} loading={loading}>
-            Upload Session File
+        <Space>
+          <Upload beforeUpload={handleUpload} accept=".json,.txt" showUploadList={false}>
+            <Button type="primary" icon={<InboxOutlined />} loading={loading}>
+              Upload Session File
+            </Button>
+          </Upload>
+          <Button
+            type="default"
+            onClick={() => setShowJiraModal(true)}
+            disabled={!sessionData}
+          >
+            Create Jira Ticket
           </Button>
-        </Upload>
+        </Space>
       </div>
 
       {hasError && (
@@ -545,6 +556,13 @@ export default function ReplayPage() {
       >
         <OpenAISettings />
       </Modal>
+
+      {/* Jira Modal */}
+      <CreateJiraModal
+        visible={showJiraModal}
+        onClose={() => setShowJiraModal(false)}
+        sessionId={id}
+      />
     </Space>
   )
 }
