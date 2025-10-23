@@ -13,22 +13,25 @@ You have two ways to configure your OpenAI API key:
 ### Option 1: Environment Variable (Recommended for Development)
 
 1. **Create `.env.local` file** in the project root:
+
    ```bash
    touch .env.local
    ```
 
 2. **Add your API key** to `.env.local`:
+
    ```env
    VITE_OPENAI_API_KEY=sk-your-actual-key-here
-   
+
    # Optional: Custom API base URL (for proxy)
    # VITE_OPENAI_API_BASE=https://api.openai.com/v1
-   
+
    # Optional: Model selection (default: gpt-4o-mini)
    # VITE_OPENAI_MODEL=gpt-4o-mini
    ```
 
 3. **Restart the dev server** for changes to take effect:
+
    ```bash
    npm run dev
    ```
@@ -58,6 +61,7 @@ This stores the key in your browser's `localStorage` and never sends it to any s
 ## Security Best Practices
 
 ### ✅ DO:
+
 - Store API keys in `.env.local` (auto-ignored by git)
 - Use runtime configuration for production deployments
 - Set usage limits on your API key in OpenAI dashboard
@@ -65,6 +69,7 @@ This stores the key in your browser's `localStorage` and never sends it to any s
 - Revoke and regenerate keys if they're exposed
 
 ### ❌ DON'T:
+
 - Never commit `.env.local` or any file with API keys
 - Never hardcode API keys in source code
 - Never share API keys in chat logs or screenshots
@@ -101,17 +106,18 @@ curl https://api.openai.com/v1/chat/completions \
 The AI Analysis feature is designed to be cost-efficient:
 
 ### Token Limits
+
 - **Analysis scope**: Last 1000 console logs + 500 network requests
 - **Max response**: 2000 tokens (~$0.01 per analysis with gpt-4o-mini)
 - **Optimizations**: Automatic truncation of long messages and stack traces
 
 ### Recommended Models
 
-| Model | Cost per Analysis | Speed | Quality |
-|-------|-------------------|-------|---------|
-| gpt-4o-mini | $0.01 - $0.05 | Fast | Good ✅ |
-| gpt-4 | $0.10 - $0.30 | Medium | Excellent |
-| gpt-3.5-turbo | $0.005 - $0.02 | Fastest | Basic |
+| Model         | Cost per Analysis | Speed   | Quality   |
+| ------------- | ----------------- | ------- | --------- |
+| gpt-4o-mini   | $0.01 - $0.05     | Fast    | Good ✅   |
+| gpt-4         | $0.10 - $0.30     | Medium  | Excellent |
+| gpt-3.5-turbo | $0.005 - $0.02    | Fastest | Basic     |
 
 **Recommendation**: Use `gpt-4o-mini` (default) for best balance of cost and quality.
 
@@ -129,17 +135,20 @@ Protect yourself from unexpected costs:
 ### "API key not configured" error
 
 **Solution**: Make sure you've either:
+
 - Created `.env.local` with `VITE_OPENAI_API_KEY=sk-...` and restarted dev server
 - Configured the API key through the UI Settings
 
 ### "Invalid API key" error
 
 **Possible causes**:
+
 - API key format is wrong (should start with `sk-`)
 - Key was revoked in OpenAI dashboard
 - Key expired or exceeded quota
 
-**Solution**: 
+**Solution**:
+
 - Generate a new API key from OpenAI dashboard
 - Update your configuration
 
@@ -148,6 +157,7 @@ Protect yourself from unexpected costs:
 **Cause**: You've exceeded OpenAI's rate limits
 
 **Solution**:
+
 - Wait a few minutes and try again
 - Upgrade your OpenAI account tier
 - Reduce analysis frequency
@@ -155,11 +165,13 @@ Protect yourself from unexpected costs:
 ### "Network error" or "Connection refused"
 
 **Possible causes**:
+
 - No internet connection
 - Firewall blocking OpenAI API
 - Using wrong API base URL
 
 **Solution**:
+
 - Check your internet connection
 - If using a proxy, configure `VITE_OPENAI_API_BASE`
 - Check firewall settings
@@ -193,6 +205,7 @@ The runtime configuration is stored in `localStorage` with this structure:
 ```
 
 You can inspect it in browser DevTools:
+
 ```javascript
 localStorage.getItem('web-reel-openai-config')
 ```
@@ -220,4 +233,3 @@ VITE_OPENAI_API_KEY=your-key
 ---
 
 **Remember**: Keep your API keys secure! 🔐
-
