@@ -1,6 +1,6 @@
 /**
  * OpenAI Configuration
- * 
+ *
  * Security Notice:
  * - API keys are stored in .env.local (not committed to git)
  * - Alternatively, users can configure at runtime via UI
@@ -8,13 +8,13 @@
  */
 
 export interface OpenAIConfig {
-  apiKey: string
-  apiBase?: string
-  model?: string
+  apiKey: string;
+  apiBase?: string;
+  model?: string;
 }
 
 // Storage key for runtime configuration
-const STORAGE_KEY = 'web-reel-openai-config'
+const STORAGE_KEY = 'web-reel-openai-config';
 
 /**
  * Get OpenAI configuration from environment variables
@@ -24,7 +24,7 @@ export function getEnvConfig(): Partial<OpenAIConfig> {
     apiKey: import.meta.env.VITE_OPENAI_API_KEY || '',
     apiBase: import.meta.env.VITE_OPENAI_API_BASE || 'https://api.openai.com/v1',
     model: import.meta.env.VITE_OPENAI_MODEL || 'gpt-4o-mini',
-  }
+  };
 }
 
 /**
@@ -32,12 +32,12 @@ export function getEnvConfig(): Partial<OpenAIConfig> {
  */
 export function getRuntimeConfig(): Partial<OpenAIConfig> | null {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (!stored) return null
-    return JSON.parse(stored)
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return null;
+    return JSON.parse(stored);
   } catch (error) {
-    console.error('Failed to load OpenAI config from localStorage:', error)
-    return null
+    console.error('Failed to load OpenAI config from localStorage:', error);
+    return null;
   }
 }
 
@@ -46,10 +46,10 @@ export function getRuntimeConfig(): Partial<OpenAIConfig> | null {
  */
 export function saveRuntimeConfig(config: Partial<OpenAIConfig>): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(config))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
   } catch (error) {
-    console.error('Failed to save OpenAI config to localStorage:', error)
-    throw error
+    console.error('Failed to save OpenAI config to localStorage:', error);
+    throw error;
   }
 }
 
@@ -57,26 +57,26 @@ export function saveRuntimeConfig(config: Partial<OpenAIConfig>): void {
  * Clear runtime configuration
  */
 export function clearRuntimeConfig(): void {
-  localStorage.removeItem(STORAGE_KEY)
+  localStorage.removeItem(STORAGE_KEY);
 }
 
 /**
  * Get merged configuration (runtime config takes precedence)
  */
 export function getOpenAIConfig(): OpenAIConfig {
-  const envConfig = getEnvConfig()
-  const runtimeConfig = getRuntimeConfig()
-  
+  const envConfig = getEnvConfig();
+  const runtimeConfig = getRuntimeConfig();
+
   const merged = {
     ...envConfig,
     ...runtimeConfig,
-  }
-  
+  };
+
   if (!merged.apiKey) {
-    throw new Error('OpenAI API key is not configured. Please set it in .env.local or via Settings.')
+    throw new Error('OpenAI API key is not configured. Please set it in .env.local or via Settings.');
   }
-  
-  return merged as OpenAIConfig
+
+  return merged as OpenAIConfig;
 }
 
 /**
@@ -84,10 +84,10 @@ export function getOpenAIConfig(): OpenAIConfig {
  */
 export function isOpenAIConfigured(): boolean {
   try {
-    const config = getOpenAIConfig()
-    return !!config.apiKey
+    const config = getOpenAIConfig();
+    return !!config.apiKey;
   } catch {
-    return false
+    return false;
   }
 }
 
@@ -95,8 +95,7 @@ export function isOpenAIConfigured(): boolean {
  * Validate API key format (basic check)
  */
 export function validateApiKey(apiKey: string): boolean {
-  if (!apiKey) return false
+  if (!apiKey) return false;
   // OpenAI API keys start with 'sk-' and have a certain length
-  return apiKey.startsWith('sk-') && apiKey.length > 20
+  return apiKey.startsWith('sk-') && apiKey.length > 20;
 }
-

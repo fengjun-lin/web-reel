@@ -10,6 +10,7 @@
 ```
 
 脚本会引导你：
+
 1. 输入 API Key（会隐藏显示）
 2. 选择模型（默认 gpt-4o-mini）
 3. 自动创建 `.env.local` 文件
@@ -37,6 +38,7 @@ npm run dev
 ## 📍 配置存储位置
 
 ### 文件配置（`.env.local`）
+
 ```
 位置: /Users/fengjunlin/projects/web-reel/.env.local
 优点: 永久保存，自动加载
@@ -44,11 +46,12 @@ npm run dev
 ```
 
 ### 浏览器配置（localStorage）
+
 ```
 位置: 浏览器 localStorage
 Key:  web-reel-openai-config
 优点: 无需重启，即时生效
-查看: 
+查看:
   1. 打开浏览器 Console (F12)
   2. 输入: localStorage.getItem('web-reel-openai-config')
   3. 或使用: JSON.parse(localStorage.getItem('web-reel-openai-config'))
@@ -64,6 +67,7 @@ Key:  web-reel-openai-config
 ```
 
 这会显示：
+
 - `.env.local` 文件是否存在
 - 当前配置内容（API Key 会隐藏显示）
 - 浏览器 localStorage 配置状态
@@ -93,10 +97,10 @@ npm run dev
 
 ## 💾 配置持久性
 
-| 配置方式 | 存储位置 | 持久性 | 优先级 |
-|---------|---------|--------|--------|
-| `.env.local` | 文件系统 | ✅ 永久（直到删除文件） | 低 |
-| localStorage | 浏览器 | ✅ 永久（直到清除浏览器数据） | 高 |
+| 配置方式     | 存储位置 | 持久性                        | 优先级 |
+| ------------ | -------- | ----------------------------- | ------ |
+| `.env.local` | 文件系统 | ✅ 永久（直到删除文件）       | 低     |
+| localStorage | 浏览器   | ✅ 永久（直到清除浏览器数据） | 高     |
 
 **注意**：如果同时配置了两者，**localStorage 优先**！
 
@@ -105,6 +109,7 @@ npm run dev
 ## 🔄 修改配置
 
 ### 修改文件配置
+
 ```bash
 # 方法 1: 重新运行配置脚本
 ./scripts/setup-openai.sh
@@ -118,6 +123,7 @@ rm .env.local
 ```
 
 ### 修改浏览器配置
+
 ```bash
 # 方法 1: 通过 UI 修改
 # Settings -> 输入新的 API Key -> 保存
@@ -138,17 +144,20 @@ localStorage.removeItem('web-reel-openai-config')
 ## 🗑️ 删除配置
 
 ### 删除文件配置
+
 ```bash
 rm .env.local
 ```
 
 ### 删除浏览器配置
+
 ```javascript
 // 在浏览器 Console 中运行
-localStorage.removeItem('web-reel-openai-config')
+localStorage.removeItem('web-reel-openai-config');
 ```
 
 ### 或者通过 UI 删除
+
 Settings -> Clear Configuration
 
 ---
@@ -158,12 +167,13 @@ Settings -> Clear Configuration
 ### 问题：配置后还是提示 "Not Configured"
 
 **检查步骤**：
+
 ```bash
 # 1. 检查配置文件
 cat .env.local
 
 # 2. 检查浏览器配置
-# 浏览器 Console: 
+# 浏览器 Console:
 localStorage.getItem('web-reel-openai-config')
 
 # 3. 检查环境变量是否生效
@@ -237,21 +247,20 @@ nano .env.local
 ```
 
 或在浏览器 Console 中：
+
 ```javascript
 // 查看配置来源
 const envConfig = {
   apiKey: import.meta.env.VITE_OPENAI_API_KEY,
   apiBase: import.meta.env.VITE_OPENAI_API_BASE,
-  model: import.meta.env.VITE_OPENAI_MODEL
-}
+  model: import.meta.env.VITE_OPENAI_MODEL,
+};
 
-const localStorageConfig = JSON.parse(
-  localStorage.getItem('web-reel-openai-config') || 'null'
-)
+const localStorageConfig = JSON.parse(localStorage.getItem('web-reel-openai-config') || 'null');
 
-console.log('环境变量配置:', envConfig)
-console.log('localStorage 配置:', localStorageConfig)
-console.log('最终使用:', localStorageConfig || envConfig)
+console.log('环境变量配置:', envConfig);
+console.log('localStorage 配置:', localStorageConfig);
+console.log('最终使用:', localStorageConfig || envConfig);
 ```
 
 ---
@@ -259,18 +268,20 @@ console.log('最终使用:', localStorageConfig || envConfig)
 ## 🎉 总结
 
 **最简单的方式**：
+
 ```bash
 ./scripts/setup-openai.sh
 ```
 
 **配置存储位置**：
+
 - 文件：`.env.local`（永久）
 - 浏览器：`localStorage['web-reel-openai-config']`（永久）
 
 **查看配置**：
+
 ```bash
 ./scripts/check-openai.sh
 ```
 
 **就是这么简单！** 🚀
-

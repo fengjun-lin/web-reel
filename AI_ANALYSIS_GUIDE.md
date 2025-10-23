@@ -7,6 +7,7 @@ Web-Reel 现在集成了 AI 驱动的会话分析功能，可以自动分析录�
 ## 核心特性
 
 ### 🎯 智能分析
+
 - **自动识别错误**：检测 Console 中的 error 和 warning
 - **网络问题诊断**：分析 4xx/5xx 错误请求
 - **根因分析**：追溯问题的根本原因
@@ -14,12 +15,14 @@ Web-Reel 现在集成了 AI 驱动的会话分析功能，可以自动分析录�
 - **修复建议**：提供具体的解决方案
 
 ### 🔒 安全优先
+
 - API Key 本地存储（localStorage 或 .env.local）
 - 不会上传到任何服务器（除了 OpenAI）
 - 支持运行时配置，无需修改代码
 - 完全透明的数据处理
 
 ### 💰 成本优化
+
 - 只分析最近的 1000 条日志和 500 个请求
 - 自动截断过长的内容
 - 使用 gpt-4o-mini（成本约 $0.01-0.05/次）
@@ -30,6 +33,7 @@ Web-Reel 现在集成了 AI 驱动的会话分析功能，可以自动分析录�
 ### 步骤 1: 配置 API Key
 
 **⚠️ 重要安全提示**：
+
 - 永远不要在代码中硬编码 API Key
 - 永远不要提交 `.env.local` 到 git
 - 如果 API Key 泄露，立即到 OpenAI 官网撤销
@@ -37,11 +41,13 @@ Web-Reel 现在集成了 AI 驱动的会话分析功能，可以自动分析录�
 #### 方法 A: 环境变量（推荐用于开发）
 
 1. 在项目根目录创建 `.env.local` 文件：
+
    ```bash
    touch .env.local
    ```
 
 2. 添加你的 API Key：
+
    ```env
    VITE_OPENAI_API_KEY=sk-你的实际key
    ```
@@ -70,23 +76,27 @@ Web-Reel 现在集成了 AI 驱动的会话分析功能，可以自动分析录�
 AI 会分析以下数据：
 
 ### 1. Console 错误
+
 - 错误信息
 - 堆栈追踪
 - 发生时间
 - 上下文日志
 
 ### 2. Console 警告
+
 - 警告信息
 - 警告类型
 - 出现频率
 
 ### 3. 网络错误
+
 - 请求 URL
 - HTTP 状态码
 - 请求/响应内容
 - 错误发生时间
 
 ### 4. 时间线
+
 - 事件发生顺序
 - 错误之间的时间关系
 - 关键操作路径
@@ -96,37 +106,42 @@ AI 会分析以下数据：
 AI 生成的报告包含：
 
 ### 1. 根因分析 (Root Cause Analysis)
+
 - 问题的主要原因
 - 首次失败点
 - 关键错误识别
 
 ### 2. 错误关联 (Error Correlation)
+
 - 错误之间的关系
 - 因果链条
 - 级联失败分析
 
 ### 3. 影响评估 (Impact Assessment)
+
 - 致命错误（阻塞用户流程）
 - 一般错误（影响体验）
 - 轻微警告（可忽略）
 
 ### 4. 修复建议 (Fix Suggestions)
+
 - 代码修改建议
 - 配置调整
 - API 修复
 - 具体的代码示例
 
 ### 5. 预防措施 (Prevention)
+
 - 代码改进建议
 - 错误处理优化
 - 监控告警建议
 
 ## 成本估算
 
-| 模型 | 单次分析成本 | 速度 | 质量 | 推荐 |
-|------|------------|------|------|-----|
-| gpt-4o-mini | $0.01 - $0.05 | 快 | 好 | ✅ 推荐 |
-| gpt-4 | $0.10 - $0.30 | 中 | 优秀 | 复杂问题 |
+| 模型          | 单次分析成本   | 速度 | 质量 | 推荐     |
+| ------------- | -------------- | ---- | ---- | -------- |
+| gpt-4o-mini   | $0.01 - $0.05  | 快   | 好   | ✅ 推荐  |
+| gpt-4         | $0.10 - $0.30  | 中   | 优秀 | 复杂问题 |
 | gpt-3.5-turbo | $0.005 - $0.02 | 最快 | 基础 | 简单问题 |
 
 ### 成本控制建议
@@ -172,6 +187,7 @@ AI 生成的报告包含：
 **原因**：未配置 API Key
 
 **解决方案**：
+
 - 检查 `.env.local` 是否存在并包含正确的 Key
 - 重启开发服务器
 - 或者通过 UI 配置运行时 Key
@@ -181,6 +197,7 @@ AI 生成的报告包含：
 **原因**：API Key 格式错误或已撤销
 
 **解决方案**：
+
 - 确认 Key 以 `sk-` 开头
 - 检查是否在 OpenAI 官网撤销了这个 Key
 - 生成新的 API Key
@@ -190,6 +207,7 @@ AI 生成的报告包含：
 **原因**：超过了 OpenAI 的速率限制
 
 **解决方案**：
+
 - 等待几分钟后重试
 - 升级 OpenAI 账户层级
 - 减少分析频率
@@ -197,11 +215,13 @@ AI 生成的报告包含：
 ### 问题: 分析结果不准确
 
 **可能原因**：
+
 - 数据不足（日志太少）
 - 错误信息不够详细
 - 使用了成本较低的模型
 
 **解决方案**：
+
 - 确保会话包含完整的错误信息
 - 尝试使用 gpt-4 模型
 - 手动补充更多上下文信息
@@ -264,19 +284,19 @@ VITE_OPENAI_API_KEY=your-azure-key
 
 ```typescript
 const data = prepareAnalysisData(logs, requests, {
-  logLimit: 1000,        // 调整日志数量
-  requestLimit: 500,     // 调整请求数量
+  logLimit: 1000, // 调整日志数量
+  requestLimit: 500, // 调整请求数量
   includeStackTrace: true, // 是否包含堆栈
-})
+});
 ```
 
 编辑 `src/services/openai.ts`:
 
 ```typescript
 const result = await chatCompletion({
-  temperature: 0.3,     // 调整创造性（0-2）
-  maxTokens: 2000,      // 调整响应长度
-})
+  temperature: 0.3, // 调整创造性（0-2）
+  maxTokens: 2000, // 调整响应长度
+});
 ```
 
 ## 实际使用案例
@@ -286,6 +306,7 @@ const result = await chatCompletion({
 **场景**：用户报告页面崩溃
 
 **操作**：
+
 1. 加载用户的会话录制
 2. 查看有 12 个 console errors
 3. 点击 AI Analysis
@@ -301,6 +322,7 @@ const result = await chatCompletion({
 **场景**：用户无法登录
 
 **操作**：
+
 1. 加载用户的会话录制
 2. 查看有 3 个 401 network errors
 3. 点击 AI Analysis
@@ -316,6 +338,7 @@ const result = await chatCompletion({
 **场景**：页面加载缓慢
 
 **操作**：
+
 1. 加载会话录制
 2. 查看有多个 warning 和慢请求
 3. 点击 AI Analysis
@@ -331,26 +354,26 @@ const result = await chatCompletion({
 ### 编程式调用 AI 分析
 
 ```typescript
-import { chatCompletion } from '@/services/openai'
-import { prepareAnalysisData, buildAnalysisPrompt } from '@/utils/analysisHelper'
+import { chatCompletion } from '@/services/openai';
+import { prepareAnalysisData, buildAnalysisPrompt } from '@/utils/analysisHelper';
 
 // 准备数据
-const data = prepareAnalysisData(logs, requests)
+const data = prepareAnalysisData(logs, requests);
 
 // 构建提示词
-const prompt = buildAnalysisPrompt(data)
+const prompt = buildAnalysisPrompt(data);
 
 // 调用 OpenAI
 const result = await chatCompletion({
   messages: [
     { role: 'system', content: 'You are a debugging expert.' },
-    { role: 'user', content: prompt }
+    { role: 'user', content: prompt },
   ],
   temperature: 0.3,
   maxTokens: 2000,
-})
+});
 
-console.log(result.content) // AI 分析结果
+console.log(result.content); // AI 分析结果
 ```
 
 ### 自定义分析逻辑
@@ -361,10 +384,10 @@ const data = prepareAnalysisData(logs, requests, {
   logLimit: 1000,
   requestLimit: 500,
   includeStackTrace: true,
-})
+});
 
 // 过滤掉 warnings
-data.warnings = []
+data.warnings = [];
 
 // 自定义提示词
 const customPrompt = `
@@ -374,11 +397,11 @@ ${JSON.stringify(data.errors, null, 2)}
 只关注：
 1. 致命错误
 2. 用户无法继续操作的问题
-`
+`;
 
 const result = await chatCompletion({
-  messages: [{ role: 'user', content: customPrompt }]
-})
+  messages: [{ role: 'user', content: customPrompt }],
+});
 ```
 
 ## 常见问题 (FAQ)
@@ -402,6 +425,7 @@ A: 是的，OpenAI 支持多语言。你可以在提示词中指定语言。
 **Q: 分析不准确怎么办？**
 
 A: 尝试：
+
 1. 使用更好的模型（gpt-4）
 2. 提供更多上下文
 3. 手动补充问题描述
@@ -430,6 +454,7 @@ A: 目前不支持，但你可以通过 API 自己实现批量分析。
 ## 支持
 
 如有问题或建议，请：
+
 1. 查看本文档的故障排查部分
 2. 查看 `OPENAI_SETUP.md` 获取配置帮助
 3. 提交 Issue 到项目仓库
@@ -437,4 +462,3 @@ A: 目前不支持，但你可以通过 API 自己实现批量分析。
 ---
 
 **记住**：保护好你的 API Key！🔐
-

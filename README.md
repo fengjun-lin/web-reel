@@ -87,6 +87,7 @@ Quick deploy with one click:
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/web-reel&env=VITE_OPENAI_API_KEY&envDescription=OpenAI%20API%20Key%20for%20AI%20analysis%20features&envLink=https://platform.openai.com/api-keys)
 
 **Environment Variables Required:**
+
 - `VITE_OPENAI_API_KEY` - OpenAI API key (optional, can be configured at runtime)
 - `VITE_OPENAI_API_BASE` - OpenAI API base URL (optional)
 - `VITE_OPENAI_MODEL` - OpenAI model name (optional)
@@ -137,21 +138,23 @@ npm install @web-reel/recorder
 ```
 
 **Quick Start:**
+
 ```typescript
-import { WebReelRecorder } from '@web-reel/recorder'
+import { WebReelRecorder } from '@web-reel/recorder';
 
 const recorder = new WebReelRecorder({
   env: 'test',
   appId: 1,
   projectName: 'my-app',
   deviceId: 'user-123',
-})
+});
 
 // Export session data
-await recorder.exportLog()
+await recorder.exportLog();
 ```
 
 **Documentation:**
+
 - Installation & Usage: See [HOW_TO_USE_RECORDER_PACKAGE.md](./HOW_TO_USE_RECORDER_PACKAGE.md)
 - Publishing Guide: See [packages/recorder/PUBLISH_GUIDE.md](./packages/recorder/PUBLISH_GUIDE.md)
 

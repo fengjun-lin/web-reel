@@ -1,33 +1,33 @@
-import { injectStyles } from './styles'
+import { injectStyles } from './styles';
 
 export interface EntryButtonOptions {
-  onClick?: () => void
-  disabled?: boolean
-  extraClass?: string
-  position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
+  onClick?: () => void;
+  disabled?: boolean;
+  extraClass?: string;
+  position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
 }
 
 const DOWNLOAD_ICON_SVG = `
 <svg viewBox="64 64 896 896" focusable="false" fill="currentColor" width="1em" height="1em" data-icon="download" aria-hidden="true">
   <path d="M505.7 661a8 8 0 0012.6 0l112-141.7c4.1-5.2.4-12.9-6.3-12.9h-74.1V168c0-4.4-3.6-8-8-8h-60c-4.4 0-8 3.6-8 8v338.3H400c-6.7 0-10.4 7.7-6.3 12.9l112 141.8zM878 626h-60c-4.4 0-8 3.6-8 8v154H214V634c0-4.4-3.6-8-8-8h-60c-4.4 0-8 3.6-8 8v198c0 17.7 14.3 32 32 32h684c17.7 0 32-14.3 32-32V634c0-4.4-3.6-8-8-8z"></path>
 </svg>
-`
+`;
 
 /**
  * Floating entry button for recorder controls
  */
 export class EntryButton {
-  private element: HTMLElement | null = null
-  private options: EntryButtonOptions
+  private element: HTMLElement | null = null;
+  private options: EntryButtonOptions;
 
   constructor(options: EntryButtonOptions = {}) {
     this.options = {
       position: 'bottom-right',
       ...options,
-    }
+    };
 
     if (!this.options.disabled) {
-      this.init()
+      this.init();
     }
   }
 
@@ -36,63 +36,63 @@ export class EntryButton {
    */
   private init(): void {
     // Inject styles
-    injectStyles()
+    injectStyles();
 
     // Create button element
-    this.element = this.createButton()
+    this.element = this.createButton();
 
     // Append to body
-    document.body.appendChild(this.element)
+    document.body.appendChild(this.element);
 
     // Setup event listeners
-    this.setupEvents()
+    this.setupEvents();
 
-    console.log('[EntryButton] Initialized')
+    console.log('[EntryButton] Initialized');
   }
 
   /**
    * Create button element
    */
   private createButton(): HTMLElement {
-    const button = document.createElement('div')
+    const button = document.createElement('div');
 
     // Set base class
-    let className = 'web-reel-entry-button'
+    let className = 'web-reel-entry-button';
 
     // Add position class
-    className += ` web-reel-entry-button--${this.options.position}`
+    className += ` web-reel-entry-button--${this.options.position}`;
 
     // Add extra class if provided
     if (this.options.extraClass) {
-      className += ` ${this.options.extraClass}`
+      className += ` ${this.options.extraClass}`;
     }
 
-    button.className = className
-    button.innerHTML = DOWNLOAD_ICON_SVG
-    button.title = 'Export Session Recording'
-    button.setAttribute('role', 'button')
-    button.setAttribute('aria-label', 'Export Session Recording')
+    button.className = className;
+    button.innerHTML = DOWNLOAD_ICON_SVG;
+    button.title = 'Export Session Recording';
+    button.setAttribute('role', 'button');
+    button.setAttribute('aria-label', 'Export Session Recording');
 
     // Add tooltip element
-    const tooltip = document.createElement('span')
-    tooltip.className = 'web-reel-entry-button-tooltip'
-    tooltip.textContent = 'Export Session Recording'
-    button.appendChild(tooltip)
+    const tooltip = document.createElement('span');
+    tooltip.className = 'web-reel-entry-button-tooltip';
+    tooltip.textContent = 'Export Session Recording';
+    button.appendChild(tooltip);
 
-    return button
+    return button;
   }
 
   /**
    * Setup event listeners
    */
   private setupEvents(): void {
-    if (!this.element) return
+    if (!this.element) return;
 
     this.element.addEventListener('click', () => {
       if (this.options.onClick) {
-        this.options.onClick()
+        this.options.onClick();
       }
-    })
+    });
   }
 
   /**
@@ -100,7 +100,7 @@ export class EntryButton {
    */
   public show(): void {
     if (this.element) {
-      this.element.style.display = 'flex'
+      this.element.style.display = 'flex';
     }
   }
 
@@ -109,7 +109,7 @@ export class EntryButton {
    */
   public hide(): void {
     if (this.element) {
-      this.element.style.display = 'none'
+      this.element.style.display = 'none';
     }
   }
 
@@ -118,43 +118,43 @@ export class EntryButton {
    */
   public destroy(): void {
     if (this.element && this.element.parentNode) {
-      this.element.parentNode.removeChild(this.element)
-      this.element = null
+      this.element.parentNode.removeChild(this.element);
+      this.element = null;
     }
 
-    console.log('[EntryButton] Destroyed')
+    console.log('[EntryButton] Destroyed');
   }
 
   /**
    * Check if button is visible
    */
   public isVisible(): boolean {
-    return this.element !== null && this.element.style.display !== 'none'
+    return this.element !== null && this.element.style.display !== 'none';
   }
 
   /**
    * Update button position
    */
   public setPosition(position: EntryButtonOptions['position']): void {
-    if (!this.element) return
+    if (!this.element) return;
 
     // Remove old position class
     this.element.classList.remove(
       'web-reel-entry-button--bottom-right',
       'web-reel-entry-button--bottom-left',
       'web-reel-entry-button--top-right',
-      'web-reel-entry-button--top-left'
-    )
+      'web-reel-entry-button--top-left',
+    );
 
     // Add new position class
-    this.element.classList.add(`web-reel-entry-button--${position}`)
-    this.options.position = position
+    this.element.classList.add(`web-reel-entry-button--${position}`);
+    this.options.position = position;
   }
 
   /**
    * Get button element
    */
   public getElement(): HTMLElement | null {
-    return this.element
+    return this.element;
   }
 }

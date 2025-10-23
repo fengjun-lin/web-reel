@@ -66,6 +66,7 @@ npm run dev
 ### 1. 使用占位符
 
 当需要帮助时，使用占位符：
+
 ```
 我的 API key 是: sk-xxx...xxx（已隐藏）
 ```
@@ -73,15 +74,17 @@ npm run dev
 ### 2. 环境变量检查
 
 在提交前检查：
+
 ```bash
 # 查找可能的 API Key
-git grep -i "sk-proj" 
+git grep -i "sk-proj"
 git grep -i "OPENAI_API_KEY.*sk-"
 ```
 
 ### 3. 预提交钩子
 
 创建 `.git/hooks/pre-commit`:
+
 ```bash
 #!/bin/bash
 if git diff --cached | grep -i "sk-proj\|sk-[A-Za-z0-9]\{20,\}"; then
@@ -182,4 +185,3 @@ VITE_OPENAI_API_KEY=sk-你的开发key
 ---
 
 **记住**：API Key 就像密码一样重要，永远不要分享！🔐
-

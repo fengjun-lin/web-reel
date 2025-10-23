@@ -1,17 +1,17 @@
-import { Button, Card, Divider, Space, Typography, message } from 'antd'
-import { useRef, useState } from 'react'
+import { Button, Card, Divider, Space, Typography, message } from 'antd';
+import { useRef, useState } from 'react';
 
-import { WebReelRecorder } from '@/recorder'
-import { Env } from '@/types'
+import { WebReelRecorder } from '@/recorder';
+import { Env } from '@/types';
 
-const { Title, Text } = Typography
+const { Title, Text } = Typography;
 
 export default function RecorderTestPage() {
-  const recorderRef = useRef<WebReelRecorder | null>(null)
-  const [isRecording, setIsRecording] = useState(false)
-  const [sessionId, setSessionId] = useState<number>(0)
-  const [eventCount, setEventCount] = useState(0)
-  const [networkCount, setNetworkCount] = useState(0)
+  const recorderRef = useRef<WebReelRecorder | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [sessionId, setSessionId] = useState<number>(0);
+  const [eventCount, setEventCount] = useState(0);
+  const [networkCount, setNetworkCount] = useState(0);
 
   const initRecorder = () => {
     try {
@@ -23,102 +23,102 @@ export default function RecorderTestPage() {
         recordInterval: 10000,
         disabledDownLoad: false,
         enableStats: false, // Disable stats to avoid API errors
-      })
+      });
 
-      recorderRef.current = recorder
-      setIsRecording(true)
-      
+      recorderRef.current = recorder;
+      setIsRecording(true);
+
       // Wait for recorder to be fully initialized
       const checkInitialized = setInterval(() => {
         if (recorder.isInitialized()) {
-          clearInterval(checkInitialized)
-          setSessionId(recorder.getSessionId())
-          message.success('Recording SDK started!')
+          clearInterval(checkInitialized);
+          setSessionId(recorder.getSessionId());
+          message.success('Recording SDK started!');
         }
-      }, 100)
+      }, 100);
 
       const interval = setInterval(async () => {
         if (recorder && recorder.isInitialized()) {
-          const db = recorder.getDB()
-          const sid = recorder.getSessionId()
-          
+          const db = recorder.getDB();
+          const sid = recorder.getSessionId();
+
           try {
-            const events = await db.get('renderEvent', String(sid))
-            const requests = await db.get('responseData', String(sid))
-            
-            setEventCount(events?.length || 0)
-            setNetworkCount(requests?.length || 0)
+            const events = await db.get('renderEvent', String(sid));
+            const requests = await db.get('responseData', String(sid));
+
+            setEventCount(events?.length || 0);
+            setNetworkCount(requests?.length || 0);
           } catch (error) {
             // Silently ignore errors during initialization
             if (error instanceof Error && !error.message.includes('not found')) {
-              console.error('Failed to get stats:', error)
+              console.error('Failed to get stats:', error);
             }
           }
         }
-      }, 2000)
+      }, 2000);
 
       return () => {
-        clearInterval(checkInitialized)
-        clearInterval(interval)
-      }
+        clearInterval(checkInitialized);
+        clearInterval(interval);
+      };
     } catch (error) {
-      console.error('Failed to initialize recorder:', error)
-      message.error('Recording SDK failed to start')
+      console.error('Failed to initialize recorder:', error);
+      message.error('Recording SDK failed to start');
     }
-  }
+  };
 
   const stopRecorder = () => {
     if (recorderRef.current) {
-      recorderRef.current.stop()
-      recorderRef.current = null
-      setIsRecording(false)
-      message.info('Recording SDK stopped')
+      recorderRef.current.stop();
+      recorderRef.current = null;
+      setIsRecording(false);
+      message.info('Recording SDK stopped');
     }
-  }
+  };
 
   const exportJSON = async () => {
     if (recorderRef.current) {
       try {
-        await recorderRef.current.exportLog(false)
-        message.success('Exported as JSON successfully!')
+        await recorderRef.current.exportLog(false);
+        message.success('Exported as JSON successfully!');
       } catch {
-        message.error('Export failed')
+        message.error('Export failed');
       }
     }
-  }
+  };
 
   const exportZIP = async () => {
     if (recorderRef.current) {
       try {
-        await recorderRef.current.exportLog(true)
-        message.success('Exported as ZIP successfully!')
+        await recorderRef.current.exportLog(true);
+        message.success('Exported as ZIP successfully!');
       } catch {
-        message.error('Export failed')
+        message.error('Export failed');
       }
     }
-  }
+  };
 
   const makeTestRequest = async () => {
     try {
-      await fetch('https://jsonplaceholder.typicode.com/posts/1')
-      
-      const xhr = new XMLHttpRequest()
-      xhr.open('GET', 'https://jsonplaceholder.typicode.com/users/1')
-      xhr.send()
-      
-      message.success('Test requests sent')
-          } catch {
-        message.error('Request failed')
-      }
-  }
+      await fetch('https://jsonplaceholder.typicode.com/posts/1');
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', 'https://jsonplaceholder.typicode.com/users/1');
+      xhr.send();
+
+      message.success('Test requests sent');
+    } catch {
+      message.error('Request failed');
+    }
+  };
 
   const makeTestLogs = () => {
-    console.log('Test log message')
-    console.info('Test info message')
-    console.warn('Test warning message')
-    console.error('Test error message')
-    message.success('Test logs output to console')
-  }
+    console.log('Test log message');
+    console.info('Test info message');
+    console.warn('Test warning message');
+    console.error('Test error message');
+    message.success('Test logs output to console');
+  };
 
   return (
     <Space direction="vertical" size="large" style={{ width: '100%', padding: 24 }}>
@@ -135,11 +135,11 @@ export default function RecorderTestPage() {
               Stop Recording
             </Button>
           )}
-          
+
           <Button onClick={exportJSON} disabled={!isRecording}>
             Export JSON
           </Button>
-          
+
           <Button onClick={exportZIP} disabled={!isRecording}>
             Export ZIP
           </Button>
@@ -150,11 +150,7 @@ export default function RecorderTestPage() {
         <Space direction="vertical" size="small">
           <Text>
             <Text strong>Status: </Text>
-            {isRecording ? (
-              <Text type="success">Recording</Text>
-            ) : (
-              <Text type="secondary">Stopped</Text>
-            )}
+            {isRecording ? <Text type="success">Recording</Text> : <Text type="secondary">Stopped</Text>}
           </Text>
           <Text>
             <Text strong>Session ID: </Text>
@@ -177,9 +173,7 @@ export default function RecorderTestPage() {
             <Text strong>DOM Events Test:</Text>
             <div style={{ marginTop: 8 }}>
               <Space wrap>
-                <Button onClick={() => message.info('Button clicked')}>
-                  Click Me
-                </Button>
+                <Button onClick={() => message.info('Button clicked')}>Click Me</Button>
                 <input type="text" placeholder="Type here" style={{ padding: '4px 8px' }} />
                 <select>
                   <option>Option 1</option>
@@ -225,5 +219,5 @@ export default function RecorderTestPage() {
         </Space>
       </Card>
     </Space>
-  )
+  );
 }

@@ -9,16 +9,18 @@
 在 streaming 模式下，状态管理存在 bug：
 
 ### 原有代码（有问题）：
+
 ```typescript
 // 在 chatCompletion 完成后
 if (useStreaming) {
-  setAnalysis(streamingContent)  // ❌ 错误：streamingContent 可能为空
+  setAnalysis(streamingContent); // ❌ 错误：streamingContent 可能为空
 } else {
-  setAnalysis(result.content)
+  setAnalysis(result.content);
 }
 ```
 
 **问题**：
+
 - `streamingContent` 是通过 `setState` 异步更新的
 - 当 `chatCompletion` 返回时，`streamingContent` state 可能还没有更新
 - 导致 `setAnalysis(streamingContent)` 设置了空字符串
@@ -31,15 +33,16 @@ if (useStreaming) {
 ```typescript
 // 修复后
 // In streaming mode, result.content contains the full text after streaming completes
-setAnalysis(result.content)
+setAnalysis(result.content);
 
 // Clear streaming content after setting final analysis
 if (useStreaming) {
-  setStreamingContent('')
+  setStreamingContent('');
 }
 ```
 
 **原理**：
+
 - OpenAI 的 streaming API 在完成后，`result.content` 会包含完整的内容
 - 不依赖 React state 的异步更新
 - 确保分析结果正确设置
@@ -63,6 +66,7 @@ if (useStreaming) {
 ```
 
 **改进**：
+
 - 明确检查 `analysis.length > 0`
 - 避免显示空字符串
 
@@ -78,6 +82,7 @@ if (useStreaming) {
 ```
 
 **改进**：
+
 - 明确检查内容长度
 - 只在有内容时显示
 
@@ -182,6 +187,7 @@ if (useStreaming) {
 ## 未来优化建议
 
 1. **添加错误边界**
+
    ```typescript
    <ErrorBoundary fallback={<ErrorDisplay />}>
      <AIAnalysisPanel />
@@ -189,20 +195,22 @@ if (useStreaming) {
    ```
 
 2. **添加重试机制**
+
    ```typescript
    const handleRetry = () => {
-     handleAnalyze(true)
-   }
+     handleAnalyze(true);
+   };
    ```
 
 3. **添加分析历史**
+
    ```typescript
-   const [analysisHistory, setAnalysisHistory] = useState<string[]>([])
+   const [analysisHistory, setAnalysisHistory] = useState<string[]>([]);
    ```
 
 4. **添加进度指示**
    ```typescript
-   const [progress, setProgress] = useState(0)
+   const [progress, setProgress] = useState(0);
    // 根据 streaming chunks 更新进度
    ```
 
@@ -211,4 +219,3 @@ if (useStreaming) {
 **修复完成时间**: 2025-10-23
 **测试状态**: ✅ 通过
 **构建状态**: ✅ 成功
-

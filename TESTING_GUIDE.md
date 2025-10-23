@@ -4,18 +4,19 @@
 
 ## 🎯 方法对比
 
-| 方法 | 优点 | 缺点 | 适用场景 |
-|-----|------|------|---------|
-| npm link | 快速，实时更新 | 需要两步操作 | 开发调试 |
-| file: 协议 | 简单，像真实安装 | 需要重新安装才能更新 | 集成测试 |
-| npm pack | 最接近真实发布 | 每次都要重新打包 | 发布前验证 |
-| 本地 demo | 最简单 | 只能在当前项目测试 | 快速验证 |
+| 方法       | 优点             | 缺点                 | 适用场景   |
+| ---------- | ---------------- | -------------------- | ---------- |
+| npm link   | 快速，实时更新   | 需要两步操作         | 开发调试   |
+| file: 协议 | 简单，像真实安装 | 需要重新安装才能更新 | 集成测试   |
+| npm pack   | 最接近真实发布   | 每次都要重新打包     | 发布前验证 |
+| 本地 demo  | 最简单           | 只能在当前项目测试   | 快速验证   |
 
 ---
 
 ## 方法 1: npm link（推荐）
 
 ### 特点
+
 - ✅ 实时更新：修改代码后重新构建，其他项目立即生效
 - ✅ 不需要复制文件
 - ⚠️ 需要在两个目录操作
@@ -30,6 +31,7 @@ npm link
 ```
 
 你会看到类似输出：
+
 ```
 added 1 package, and audited 1 package in 0.5s
 ```
@@ -46,16 +48,16 @@ npm install rrweb@^1.1.3  # 安装 peer dependency
 
 ```typescript
 // src/main.ts or src/App.tsx
-import { WebReelRecorder } from '@web-reel/recorder'
+import { WebReelRecorder } from '@web-reel/recorder';
 
 const recorder = new WebReelRecorder({
   env: 'test',
   appId: 1,
   projectName: 'test-project',
   deviceId: 'test-user',
-})
+});
 
-console.log('✅ Recorder initialized:', recorder.getSessionId())
+console.log('✅ Recorder initialized:', recorder.getSessionId());
 ```
 
 #### 4. 验证安装
@@ -97,6 +99,7 @@ npm unlink
 ## 方法 2: file: 协议（最简单）
 
 ### 特点
+
 - ✅ 像真实 npm 安装一样
 - ✅ 一行命令搞定
 - ⚠️ 每次代码更新需要重新安装
@@ -123,6 +126,7 @@ npm install ../web-reel/packages/recorder rrweb@^1.1.3
 ```
 
 这会在 package.json 中添加：
+
 ```json
 {
   "dependencies": {
@@ -135,7 +139,7 @@ npm install ../web-reel/packages/recorder rrweb@^1.1.3
 #### 3. 使用
 
 ```typescript
-import { WebReelRecorder } from '@web-reel/recorder'
+import { WebReelRecorder } from '@web-reel/recorder';
 // 正常使用
 ```
 
@@ -156,6 +160,7 @@ npm install
 ## 方法 3: npm pack（最接近发布）
 
 ### 特点
+
 - ✅ 完全模拟 npm 发布
 - ✅ 可以检查打包内容
 - ⚠️ 每次测试都要重新打包
@@ -171,6 +176,7 @@ npm pack
 ```
 
 这会创建一个 `.tgz` 文件，例如：
+
 ```
 web-reel-recorder-1.0.0.tgz
 ```
@@ -182,6 +188,7 @@ tar -tzf web-reel-recorder-1.0.0.tgz
 ```
 
 你应该看到：
+
 ```
 package/package.json
 package/README.md
@@ -201,7 +208,7 @@ npm install /Users/fengjunlin/projects/web-reel/packages/recorder/web-reel-recor
 #### 4. 使用
 
 ```typescript
-import { WebReelRecorder } from '@web-reel/recorder'
+import { WebReelRecorder } from '@web-reel/recorder';
 // 正常使用
 ```
 
@@ -210,6 +217,7 @@ import { WebReelRecorder } from '@web-reel/recorder'
 ## 方法 4: 在当前 Demo 中测试（最快验证）
 
 ### 特点
+
 - ✅ 不需要额外项目
 - ✅ 可以快速验证功能
 - ⚠️ 无法测试真实集成场景
@@ -228,10 +236,10 @@ npm install ./packages/recorder
 ```typescript
 // src/pages/test/index.tsx
 // 之前
-import { WebReelRecorder } from '../../recorder'
+import { WebReelRecorder } from '../../recorder';
 
 // 改为
-import { WebReelRecorder } from '@web-reel/recorder'
+import { WebReelRecorder } from '@web-reel/recorder';
 ```
 
 #### 3. 测试
@@ -272,51 +280,51 @@ npm install rrweb@^1.1.3
 
 ```typescript
 // src/test-recorder.ts
-import { WebReelRecorder } from '@web-reel/recorder'
+import { WebReelRecorder } from '@web-reel/recorder';
 
-console.group('🧪 Testing @web-reel/recorder')
+console.group('🧪 Testing @web-reel/recorder');
 
 // Test 1: 基本初始化
-console.log('Test 1: Basic initialization')
+console.log('Test 1: Basic initialization');
 try {
   const recorder = new WebReelRecorder({
     env: 'test',
     appId: 1,
     projectName: 'test-project',
     deviceId: 'test-user-123',
-  })
-  
-  console.log('✅ Recorder initialized')
-  console.log('Session ID:', recorder.getSessionId())
-  console.log('Is ready:', recorder.isInitialized())
+  });
+
+  console.log('✅ Recorder initialized');
+  console.log('Session ID:', recorder.getSessionId());
+  console.log('Is ready:', recorder.isInitialized());
 } catch (error) {
-  console.error('❌ Initialization failed:', error)
+  console.error('❌ Initialization failed:', error);
 }
 
 // Test 2: 导出功能
-console.log('\nTest 2: Export functions')
-import { exportToFile, exportToZip } from '@web-reel/recorder'
-console.log('✅ exportToFile:', typeof exportToFile === 'function')
-console.log('✅ exportToZip:', typeof exportToZip === 'function')
+console.log('\nTest 2: Export functions');
+import { exportToFile, exportToZip } from '@web-reel/recorder';
+console.log('✅ exportToFile:', typeof exportToFile === 'function');
+console.log('✅ exportToZip:', typeof exportToZip === 'function');
 
 // Test 3: 类型检查
-console.log('\nTest 3: TypeScript types')
-import type { RecorderConfig, HarEntry } from '@web-reel/recorder'
+console.log('\nTest 3: TypeScript types');
+import type { RecorderConfig, HarEntry } from '@web-reel/recorder';
 const config: RecorderConfig = {
   env: 'test',
   appId: 1,
   projectName: 'test',
-}
-console.log('✅ TypeScript types work')
+};
+console.log('✅ TypeScript types work');
 
-console.groupEnd()
+console.groupEnd();
 ```
 
 ### 4. 在 main.ts 中导入
 
 ```typescript
 // src/main.ts (React) or src/main.ts (Vue)
-import './test-recorder'
+import './test-recorder';
 // ... rest of your code
 ```
 
@@ -327,6 +335,7 @@ npm run dev
 ```
 
 在浏览器控制台应该看到：
+
 ```
 🧪 Testing @web-reel/recorder
 Test 1: Basic initialization
@@ -349,6 +358,7 @@ Test 3: TypeScript types
 验证以下功能都正常工作：
 
 ### 基础功能
+
 - [ ] 包能正常安装/链接
 - [ ] 可以导入 `WebReelRecorder` 类
 - [ ] 可以创建 recorder 实例
@@ -356,23 +366,27 @@ Test 3: TypeScript types
 - [ ] 浮动按钮出现在页面上
 
 ### 录制功能
+
 - [ ] 可以录制 DOM 操作
 - [ ] 可以录制 console 日志
 - [ ] 可以录制网络请求
 - [ ] 数据保存到 IndexedDB
 
 ### 导出功能
+
 - [ ] 点击浮动按钮可以导出
 - [ ] 可以导出 JSON 文件
 - [ ] 可以导出 ZIP 文件
 - [ ] 导出的文件可以在 replay 页面播放
 
 ### TypeScript 支持
+
 - [ ] IDE 有代码补全
 - [ ] 类型检查无错误
 - [ ] 导入所有导出的类型
 
 ### API 方法
+
 - [ ] `recorder.stop()` 正常工作
 - [ ] `recorder.getSessionId()` 返回正确值
 - [ ] `recorder.isInitialized()` 返回 true
@@ -455,7 +469,7 @@ npm link
 npm run dev  # watch 模式
 
 # 2. 在测试项目
-cd ~/test-project  
+cd ~/test-project
 npm link @web-reel/recorder
 npm run dev
 
@@ -523,4 +537,3 @@ npm pack
 - [ ] .npmignore 或 package.json files 配置正确
 
 准备好后就可以发布了！🚀
-

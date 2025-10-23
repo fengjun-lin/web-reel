@@ -53,45 +53,51 @@ MAJOR.MINOR.PATCH
 
 ### Examples
 
-| Change | Command | Version |
-|--------|---------|---------|
-| Fix a bug | `npm version patch` | 0.1.0 → 0.1.1 |
-| Add feature | `npm version minor` | 0.1.0 → 0.2.0 |
+| Change          | Command             | Version       |
+| --------------- | ------------------- | ------------- |
+| Fix a bug       | `npm version patch` | 0.1.0 → 0.1.1 |
+| Add feature     | `npm version minor` | 0.1.0 → 0.2.0 |
 | Breaking change | `npm version major` | 0.1.0 → 1.0.0 |
 
 ## 🎯 When to Bump Which Version?
 
 ### Patch (0.1.x)
+
 - Bug fixes
 - Documentation updates
 - Performance improvements
 - No API changes
 
 **Example:**
+
 ```bash
 # Fixed: Recorder stops after 1 hour
 ./release.sh patch  # → v0.1.1
 ```
 
 ### Minor (0.x.0)
+
 - New features
 - New APIs (backwards compatible)
 - Deprecations
 - No breaking changes
 
 **Example:**
+
 ```bash
 # Added: New exportToCSV() method
 ./release.sh minor  # → v0.2.0
 ```
 
 ### Major (x.0.0)
+
 - Breaking changes
 - Removed APIs
 - Changed behavior
 - Incompatible updates
 
 **Example:**
+
 ```bash
 # Breaking: Changed WebReelRecorder constructor signature
 ./release.sh major  # → v1.0.0
@@ -248,4 +254,3 @@ git push && git push --tags
 ---
 
 **Remember**: Always use the automated script `./release.sh` for the smoothest experience! 🚀
-

@@ -1,4 +1,4 @@
-const STYLE_ID = 'web-reel-entry-button-styles'
+const STYLE_ID = 'web-reel-entry-button-styles';
 
 const STYLES = `
 .web-reel-entry-button {
@@ -245,37 +245,37 @@ const STYLES = `
     bottom: 12px;
   }
 }
-`
+`;
 
-let injected = false
+let injected = false;
 
 /**
  * Inject styles into document
  */
 export function injectStyles(): void {
-  if (injected) return
+  if (injected) return;
 
   // Check if style already exists
   if (document.getElementById(STYLE_ID)) {
-    injected = true
-    return
+    injected = true;
+    return;
   }
 
-  const style = document.createElement('style')
-  style.id = STYLE_ID
-  style.textContent = STYLES
+  const style = document.createElement('style');
+  style.id = STYLE_ID;
+  style.textContent = STYLES;
 
-  document.head.appendChild(style)
-  injected = true
+  document.head.appendChild(style);
+  injected = true;
 }
 
 /**
  * Remove injected styles
  */
 export function removeStyles(): void {
-  const style = document.getElementById(STYLE_ID)
+  const style = document.getElementById(STYLE_ID);
   if (style && style.parentNode) {
-    style.parentNode.removeChild(style)
-    injected = false
+    style.parentNode.removeChild(style);
+    injected = false;
   }
 }

@@ -13,17 +13,17 @@ That's it! `rrweb` and `idb` will be automatically installed as dependencies.
 ## 🚀 Quick Start
 
 ```typescript
-import { WebReelRecorder } from '@web-reel/recorder'
+import { WebReelRecorder } from '@web-reel/recorder';
 
 const recorder = new WebReelRecorder({
   env: 'test',
   appId: 1,
   projectName: 'my-app',
   deviceId: 'user-123',
-})
+});
 
 // Export session data as JSON file
-await recorder.exportLog()
+await recorder.exportLog();
 ```
 
 ## 📖 Full Documentation

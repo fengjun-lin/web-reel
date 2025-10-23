@@ -207,7 +207,7 @@ The runtime configuration is stored in `localStorage` with this structure:
 You can inspect it in browser DevTools:
 
 ```javascript
-localStorage.getItem('web-reel-openai-config')
+localStorage.getItem('web-reel-openai-config');
 ```
 
 ## Advanced: Using Proxy or Custom Endpoints

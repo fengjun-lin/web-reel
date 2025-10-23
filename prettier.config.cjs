@@ -1,2 +1,1 @@
-module.exports = { semi: false, singleQuote: true, trailingComma: 'all' }
-
+module.exports = { semi: false, singleQuote: true, trailingComma: 'all' };

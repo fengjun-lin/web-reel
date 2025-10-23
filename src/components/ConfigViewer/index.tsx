@@ -3,23 +3,23 @@
  * Shows where OpenAI configuration is stored and its status
  */
 
-import { CheckCircleOutlined, CloseCircleOutlined, EyeOutlined } from '@ant-design/icons'
-import { Alert, Card, Descriptions, Space, Tag, Typography } from 'antd'
+import { CheckCircleOutlined, CloseCircleOutlined, EyeOutlined } from '@ant-design/icons';
+import { Alert, Card, Descriptions, Space, Tag, Typography } from 'antd';
 
-import { getEnvConfig, getRuntimeConfig, isOpenAIConfigured } from '@/config/openai'
+import { getEnvConfig, getRuntimeConfig, isOpenAIConfigured } from '@/config/openai';
 
-const { Text, Paragraph } = Typography
+const { Text, Paragraph } = Typography;
 
 export default function ConfigViewer() {
-  const envConfig = getEnvConfig()
-  const runtimeConfig = getRuntimeConfig()
-  const isConfigured = isOpenAIConfigured()
+  const envConfig = getEnvConfig();
+  const runtimeConfig = getRuntimeConfig();
+  const isConfigured = isOpenAIConfigured();
 
   const maskApiKey = (key?: string) => {
-    if (!key) return 'Not set'
-    if (key.length < 20) return '***'
-    return `${key.slice(0, 10)}...${key.slice(-4)}`
-  }
+    if (!key) return 'Not set';
+    if (key.length < 20) return '***';
+    return `${key.slice(0, 10)}...${key.slice(-4)}`;
+  };
 
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
@@ -27,7 +27,9 @@ export default function ConfigViewer() {
       <Card>
         <Space direction="vertical" size="small" style={{ width: '100%' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text strong style={{ fontSize: 16 }}>OpenAI Configuration Status</Text>
+            <Text strong style={{ fontSize: 16 }}>
+              OpenAI Configuration Status
+            </Text>
             {isConfigured ? (
               <Tag icon={<CheckCircleOutlined />} color="success">
                 Configured
@@ -46,11 +48,7 @@ export default function ConfigViewer() {
         title={
           <Space>
             <Text>Environment Variables (.env.local)</Text>
-            {envConfig.apiKey ? (
-              <Tag color="success">Set</Tag>
-            ) : (
-              <Tag color="default">Not Set</Tag>
-            )}
+            {envConfig.apiKey ? <Tag color="success">Set</Tag> : <Tag color="default">Not Set</Tag>}
           </Space>
         }
         size="small"
@@ -86,11 +84,7 @@ export default function ConfigViewer() {
         title={
           <Space>
             <Text>Browser Storage (localStorage)</Text>
-            {runtimeConfig ? (
-              <Tag color="success">Set</Tag>
-            ) : (
-              <Tag color="default">Not Set</Tag>
-            )}
+            {runtimeConfig ? <Tag color="success">Set</Tag> : <Tag color="default">Not Set</Tag>}
           </Space>
         }
         size="small"
@@ -133,9 +127,7 @@ export default function ConfigViewer() {
               2. <Text strong>.env.local Configuration</Text> (File) - Fallback
             </Paragraph>
             <Paragraph style={{ margin: '8px 0 0 0' }}>
-              <Text type="secondary">
-                If both are configured, localStorage configuration will override .env.local.
-              </Text>
+              <Text type="secondary">If both are configured, localStorage configuration will override .env.local.</Text>
             </Paragraph>
           </Space>
         }
@@ -170,6 +162,5 @@ export default function ConfigViewer() {
         </Space>
       </Card>
     </Space>
-  )
+  );
 }
-

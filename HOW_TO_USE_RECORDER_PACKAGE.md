@@ -11,6 +11,7 @@ The `@web-reel/recorder` package has been successfully created and built.
 #### Step 1: Update package info
 
 Edit `packages/recorder/package.json`:
+
 ```json
 {
   "name": "@web-reel/recorder",
@@ -41,14 +42,14 @@ npm install @web-reel/recorder
 ```
 
 ```typescript
-import { WebReelRecorder } from '@web-reel/recorder'
+import { WebReelRecorder } from '@web-reel/recorder';
 
 const recorder = new WebReelRecorder({
   env: 'test',
   appId: 1,
   projectName: 'my-app',
   deviceId: 'user-123',
-})
+});
 ```
 
 ---
@@ -74,7 +75,7 @@ Note: `rrweb` and `idb` are now bundled as dependencies, no need to install sepa
 #### Step 3: Import and use
 
 ```typescript
-import { WebReelRecorder } from '@web-reel/recorder'
+import { WebReelRecorder } from '@web-reel/recorder';
 // ... use normally
 ```
 
@@ -90,6 +91,7 @@ npm install ../web-reel/packages/recorder rrweb@^1.1.3 idb@^8.0.3
 ```
 
 This will add to your `package.json`:
+
 ```json
 {
   "dependencies": {
@@ -103,7 +105,7 @@ This will add to your `package.json`:
 #### Step 2: Use normally
 
 ```typescript
-import { WebReelRecorder } from '@web-reel/recorder'
+import { WebReelRecorder } from '@web-reel/recorder';
 ```
 
 ---
@@ -113,20 +115,20 @@ import { WebReelRecorder } from '@web-reel/recorder'
 ### Basic Usage
 
 ```typescript
-import { WebReelRecorder } from '@web-reel/recorder'
+import { WebReelRecorder } from '@web-reel/recorder';
 
 const recorder = new WebReelRecorder({
   // Required
   env: 'test' | 'online',
   appId: 1,
   projectName: 'my-app',
-  
+
   // Optional
-  deviceId: 'user-123',              // Default: 'unknown_device'
-  recordInterval: 7,                 // Keep logs for 7 days
-  disabledDownLoad: false,           // Show download button
-  enableStats: false,                // Disable stats upload
-})
+  deviceId: 'user-123', // Default: 'unknown_device'
+  recordInterval: 7, // Keep logs for 7 days
+  disabledDownLoad: false, // Show download button
+  enableStats: false, // Disable stats upload
+});
 
 // Recorder starts automatically!
 ```
@@ -135,67 +137,71 @@ const recorder = new WebReelRecorder({
 
 ```typescript
 // Stop recording
-recorder.stop()
+recorder.stop();
 
 // Export logs as JSON file
-await recorder.exportLog()
+await recorder.exportLog();
 
 // Get session ID
-const sessionId = recorder.getSessionId()
+const sessionId = recorder.getSessionId();
 
 // Check if initialized
-const ready = recorder.isInitialized()
+const ready = recorder.isInitialized();
 
 // Access database (advanced)
-const db = recorder.getDB()
+const db = recorder.getDB();
 ```
 
 ### Advanced: Export Utilities
 
 ```typescript
-import { exportToFile } from '@web-reel/recorder'
+import { exportToFile } from '@web-reel/recorder';
 
-const eventDataMap = { /* ... */ }
-const responseDataMap = { /* ... */ }
+const eventDataMap = {
+  /* ... */
+};
+const responseDataMap = {
+  /* ... */
+};
 
-await exportToFile(eventDataMap, responseDataMap)
+await exportToFile(eventDataMap, responseDataMap);
 ```
 
 ### Advanced: Network Interceptor
 
 ```typescript
-import { NetworkInterceptor } from '@web-reel/recorder'
+import { NetworkInterceptor } from '@web-reel/recorder';
 
 const interceptor = new NetworkInterceptor({
   onRequestStart: (url, timestamp) => {
-    console.log('Request started:', url)
+    console.log('Request started:', url);
   },
   onRequestComplete: (harEntry) => {
-    console.log('Request completed:', harEntry)
+    console.log('Request completed:', harEntry);
   },
   shouldIgnore: (url) => {
-    return url.includes('analytics')
+    return url.includes('analytics');
   },
-})
+});
 
-interceptor.install()
+interceptor.install();
 // ... later
-interceptor.uninstall()
+interceptor.uninstall();
 ```
 
 ### Advanced: Custom Entry Button
 
 ```typescript
-import { EntryButton } from '@web-reel/recorder'
+import { EntryButton } from '@web-reel/recorder';
 
 const button = new EntryButton({
   onClick: () => {
-    console.log('Button clicked!')
+    console.log('Button clicked!');
   },
-})
+});
 
 // Remove button
-button.destroy()
+button.destroy();
 ```
 
 ---
@@ -244,13 +250,13 @@ import type {
   EnvStat,
   HarEntry,
   NetworkInterceptorConfig,
-} from '@web-reel/recorder'
+} from '@web-reel/recorder';
 
 const config: RecorderConfig = {
   env: 'test',
   appId: 1,
   projectName: 'my-app',
-}
+};
 ```
 
 ---
@@ -260,59 +266,59 @@ const config: RecorderConfig = {
 ### React
 
 ```tsx
-import { useEffect, useRef } from 'react'
-import { WebReelRecorder } from '@web-reel/recorder'
+import { useEffect, useRef } from 'react';
+import { WebReelRecorder } from '@web-reel/recorder';
 
 function App() {
-  const recorderRef = useRef<WebReelRecorder>()
-  
+  const recorderRef = useRef<WebReelRecorder>();
+
   useEffect(() => {
     recorderRef.current = new WebReelRecorder({
       env: 'test',
       appId: 1,
       projectName: 'my-react-app',
       deviceId: 'user-123',
-    })
-    
-    return () => recorderRef.current?.stop()
-  }, [])
-  
-  return <YourApp />
+    });
+
+    return () => recorderRef.current?.stop();
+  }, []);
+
+  return <YourApp />;
 }
 ```
 
 ### Vue 3
 
 ```typescript
-import { onMounted, onUnmounted } from 'vue'
-import { WebReelRecorder } from '@web-reel/recorder'
+import { onMounted, onUnmounted } from 'vue';
+import { WebReelRecorder } from '@web-reel/recorder';
 
 export default {
   setup() {
-    let recorder: WebReelRecorder
-    
+    let recorder: WebReelRecorder;
+
     onMounted(() => {
       recorder = new WebReelRecorder({
         env: 'test',
         appId: 1,
         projectName: 'my-vue-app',
         deviceId: 'user-123',
-      })
-    })
-    
+      });
+    });
+
     onUnmounted(() => {
-      recorder?.stop()
-    })
-  }
-}
+      recorder?.stop();
+    });
+  },
+};
 ```
 
 ### Next.js
 
 ```tsx
-'use client'
-import { useEffect } from 'react'
-import { WebReelRecorder } from '@web-reel/recorder'
+'use client';
+import { useEffect } from 'react';
+import { WebReelRecorder } from '@web-reel/recorder';
 
 export default function RootLayout({ children }) {
   useEffect(() => {
@@ -322,11 +328,11 @@ export default function RootLayout({ children }) {
         appId: 1,
         projectName: 'my-nextjs-app',
         deviceId: 'user-123',
-      })
+      });
     }
-  }, [])
-  
-  return children
+  }, []);
+
+  return children;
 }
 ```
 
@@ -343,18 +349,18 @@ const recorder = new WebReelRecorder({
   projectName: process.env.VITE_PROJECT_NAME || 'my-app',
   deviceId: getUserId(),
   disabledDownLoad: process.env.NODE_ENV === 'production',
-})
+});
 ```
 
 ### 2. Conditional Recording
 
 ```typescript
-const shouldRecord = 
-  user.role === 'beta-tester' || 
-  window.location.search.includes('debug=true')
+const shouldRecord = user.role === 'beta-tester' || window.location.search.includes('debug=true');
 
 if (shouldRecord) {
-  new WebReelRecorder({ /* config */ })
+  new WebReelRecorder({
+    /* config */
+  });
 }
 ```
 
@@ -366,13 +372,13 @@ try {
     env: 'test',
     appId: 1,
     projectName: 'my-app',
-  })
-  
+  });
+
   if (recorder.isInitialized()) {
-    console.log('✅ Recorder initialized successfully')
+    console.log('✅ Recorder initialized successfully');
   }
 } catch (error) {
-  console.error('❌ Failed to initialize recorder:', error)
+  console.error('❌ Failed to initialize recorder:', error);
 }
 ```
 
@@ -386,6 +392,7 @@ try {
 - **Total**: ~42KB (recorder only)
 
 ### Required Dependencies
+
 - `rrweb`: ~100KB (screen recording engine)
 - `idb`: ~8KB (IndexedDB wrapper)
 
@@ -403,6 +410,7 @@ try {
 ## ✅ Quick Checklist
 
 Before publishing:
+
 - [ ] Update package.json (author, repository, etc.)
 - [ ] Test the package locally
 - [ ] Write/update README
@@ -416,4 +424,3 @@ Before publishing:
 
 **Status**: ✅ Package is ready to use!  
 **Created**: 2025-10-14
-

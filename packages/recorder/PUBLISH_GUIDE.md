@@ -27,6 +27,7 @@ cd packages/recorder
 ```
 
 The script will automatically:
+
 - ✅ Run type check
 - ✅ Build the package
 - ✅ Bump version in package.json
@@ -67,6 +68,7 @@ npm publish --access public
 ### Version Management
 
 **Automatic (npm version command):**
+
 ```bash
 # This updates package.json AND creates git commit + tag
 npm version patch   # 0.1.0 → 0.1.1
@@ -75,6 +77,7 @@ npm version major   # 0.1.0 → 1.0.0
 ```
 
 **Manual (not recommended):**
+
 ```bash
 # Edit package.json manually, then:
 git add package.json
@@ -98,12 +101,15 @@ npm info @web-reel/recorder
 ## Common Issues
 
 ### "402 Payment Required"
+
 **Fix**: Add `--access public` flag
 
 ### "You must verify your email"
+
 **Fix**: Check email for verification link
 
 ### "Version already exists"
+
 **Fix**: Update version with `npm version patch`
 
 ## Useful Commands
@@ -124,4 +130,3 @@ npm pack
 - Package: https://www.npmjs.com/package/@web-reel/recorder
 - Repository: https://github.com/fengjun-lin/web-reel
 - npm docs: https://docs.npmjs.com/
-

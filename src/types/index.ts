@@ -21,20 +21,20 @@ export type LogLevel =
   | 'timeEnd'
   | 'timeLog'
   | 'trace'
-  | 'warn'
+  | 'warn';
 
 // Console log data structure
 export type LogData = {
-  level: LogLevel
-  trace: string[]
-  payload: string[]
-}
+  level: LogLevel;
+  trace: string[];
+  payload: string[];
+};
 
 export type LogInfo = {
-  level: LogLevel
-  info: any[]
-  timestamp?: number
-}
+  level: LogLevel;
+  info: any[];
+  timestamp?: number;
+};
 
 // Application IDs enum
 export enum EAppId {
@@ -55,21 +55,21 @@ export enum ErrNoType {
 
 // API response structure
 export interface ResponseV<T = any> {
-  errNo: number
-  errStr: string
-  data: T
+  errNo: number;
+  errStr: string;
+  data: T;
 }
 
 // Session log interface
 export interface ILog {
-  appId?: EAppId
-  beginTime?: number
-  endTime?: number
-  id?: number
-  deviceId?: string
-  sessionId?: number
-  domData?: string
-  networkData?: string
+  appId?: EAppId;
+  beginTime?: number;
+  endTime?: number;
+  id?: number;
+  deviceId?: string;
+  sessionId?: number;
+  domData?: string;
+  networkData?: string;
 }
 
 // Environment types
@@ -80,13 +80,13 @@ export enum Env {
 
 // Recorder configuration
 export interface RecorderOption {
-  env: Env
-  deviceId?: string
-  appId: number
-  projectName: string // Unique project identifier, required
-  disabledDownLoad?: boolean // Whether to hide download button
-  recordInterval?: number // Log retention duration in days, 0 for no history, -1 for unlimited
-  enableStats?: boolean // Whether to enable PV and ENV statistics upload, default: false
+  env: Env;
+  deviceId?: string;
+  appId: number;
+  projectName: string; // Unique project identifier, required
+  disabledDownLoad?: boolean; // Whether to hide download button
+  recordInterval?: number; // Log retention duration in days, 0 for no history, -1 for unlimited
+  enableStats?: boolean; // Whether to enable PV and ENV statistics upload, default: false
 }
 
 // Upload flag types
@@ -97,26 +97,26 @@ export enum UploadFlag {
 
 // User info for API calls
 export interface UserInfo {
-  appId: number
-  deviceId?: string
+  appId: number;
+  deviceId?: string;
 }
 
 // Environment statistics
 export interface EnvStat extends UserInfo {
-  logSize: string
-  ua: string
+  logSize: string;
+  ua: string;
 }
 
 // Session log upload payload
 export interface SessionLogPayload extends UserInfo {
-  sessionId: number
-  domData: string
-  networkData: string
-  beginTime: number
-  endTime: number
+  sessionId: number;
+  domData: string;
+  networkData: string;
+  beginTime: number;
+  endTime: number;
 }
 
 // Upload flag payload
 export interface UploadFlagPayload extends UserInfo {
-  uploadFlag: UploadFlag
+  uploadFlag: UploadFlag;
 }

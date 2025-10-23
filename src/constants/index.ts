@@ -1,9 +1,9 @@
 // General constants
 
-import { EAppId, LogLevel } from '@/types'
+import { EAppId, LogLevel } from '@/types';
 
 // rrweb original attribute name for patching
-export const ORIGINAL_ATTRIBUTE_NAME = '__rrweb_original__'
+export const ORIGINAL_ATTRIBUTE_NAME = '__rrweb_original__';
 
 // Log levels array
 export const LOG_LEVELS: LogLevel[] = [
@@ -26,24 +26,24 @@ export const LOG_LEVELS: LogLevel[] = [
   'timeLog',
   'trace',
   'warn',
-]
+];
 
 // Log level color mapping
 export const LEVEL_COLOR_MAP: Record<string, string> = {
   warn: '#fffbe5',
   error: '#fff0f0',
   info: '#f5f5f5', // Gray color to avoid conflict with highlight blue
-}
+};
 
 // Application mapping
 export const APP_MAP = new Map<EAppId, string>([
   [EAppId.KEFU, 'Customer Service Just'],
   [EAppId.PLAY_GROUND, 'Playground Demo Site'],
   [EAppId.TURING, 'Ticket System Turing'],
-])
+]);
 
 // Replayer search history localStorage key
-export const REPLAYER_SEARCH_HISTORY = 'replayer_search_history'
+export const REPLAYER_SEARCH_HISTORY = 'replayer_search_history';
 
 // Maximum search history count
-export const MAX_SEARCH_HISTORY_COUNT = 5
+export const MAX_SEARCH_HISTORY_COUNT = 5;

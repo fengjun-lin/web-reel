@@ -1,25 +1,25 @@
-import { ACTIVE_SESSION_IDS, UPLOADING_SESSION_ID } from '../constants/session'
+import { ACTIVE_SESSION_IDS, UPLOADING_SESSION_ID } from '../constants/session';
 
 // Cache for active session IDs
-let activeSessionIdsCache: number[] | null = null
+let activeSessionIdsCache: number[] | null = null;
 
 /**
  * Get all active session IDs from localStorage
  */
 export function getActiveSessionIds(): number[] {
   if (activeSessionIdsCache) {
-    return activeSessionIdsCache
+    return activeSessionIdsCache;
   }
 
-  const json = localStorage.getItem(ACTIVE_SESSION_IDS) || '[]'
+  const json = localStorage.getItem(ACTIVE_SESSION_IDS) || '[]';
   try {
-    activeSessionIdsCache = JSON.parse(json) || []
+    activeSessionIdsCache = JSON.parse(json) || [];
   } catch (error) {
-    console.warn('[Session] Failed to parse active session IDs:', error)
-    activeSessionIdsCache = []
+    console.warn('[Session] Failed to parse active session IDs:', error);
+    activeSessionIdsCache = [];
   }
 
-  return activeSessionIdsCache || []
+  return activeSessionIdsCache || [];
 }
 
 /**
@@ -27,13 +27,13 @@ export function getActiveSessionIds(): number[] {
  */
 export function setActiveSessionIds(sessionIds: number[]): void {
   try {
-    const json = JSON.stringify(sessionIds)
-    localStorage.setItem(ACTIVE_SESSION_IDS, json)
-    activeSessionIdsCache = sessionIds
+    const json = JSON.stringify(sessionIds);
+    localStorage.setItem(ACTIVE_SESSION_IDS, json);
+    activeSessionIdsCache = sessionIds;
   } catch (error) {
-    console.error('[Session] Failed to save active session IDs:', error)
-    localStorage.setItem(ACTIVE_SESSION_IDS, '[]')
-    activeSessionIdsCache = []
+    console.error('[Session] Failed to save active session IDs:', error);
+    localStorage.setItem(ACTIVE_SESSION_IDS, '[]');
+    activeSessionIdsCache = [];
   }
 }
 
@@ -41,50 +41,50 @@ export function setActiveSessionIds(sessionIds: number[]): void {
  * Add a session ID to active sessions
  */
 export function addActiveSessionId(sessionId: number): void {
-  const sessionIds = getActiveSessionIds()
+  const sessionIds = getActiveSessionIds();
 
   if (!sessionIds.includes(sessionId)) {
-    sessionIds.push(sessionId)
+    sessionIds.push(sessionId);
   }
 
-  setActiveSessionIds(sessionIds)
+  setActiveSessionIds(sessionIds);
 }
 
 /**
  * Remove a session ID from active sessions
  */
 export function removeActiveSessionId(sessionId: number): void {
-  const sessionIds = getActiveSessionIds()
-  const filtered = sessionIds.filter((id) => id !== sessionId)
-  setActiveSessionIds(filtered)
+  const sessionIds = getActiveSessionIds();
+  const filtered = sessionIds.filter((id) => id !== sessionId);
+  setActiveSessionIds(filtered);
 }
 
 /**
  * Check if a session ID is active
  */
 export function isActiveSessionId(sessionId: number): boolean {
-  const sessionIds = getActiveSessionIds()
-  return sessionIds.includes(sessionId)
+  const sessionIds = getActiveSessionIds();
+  return sessionIds.includes(sessionId);
 }
 
 /**
  * Set currently uploading session ID
  */
 export function setUploadingSessionId(sessionId: number): void {
-  localStorage.setItem(UPLOADING_SESSION_ID, String(sessionId))
+  localStorage.setItem(UPLOADING_SESSION_ID, String(sessionId));
 }
 
 /**
  * Clear uploading session ID
  */
 export function clearUploadingSessionId(): void {
-  localStorage.removeItem(UPLOADING_SESSION_ID)
+  localStorage.removeItem(UPLOADING_SESSION_ID);
 }
 
 /**
  * Get currently uploading session ID
  */
 export function getUploadingSessionId(): number | null {
-  const json = localStorage.getItem(UPLOADING_SESSION_ID)
-  return json ? Number(json) : null
+  const json = localStorage.getItem(UPLOADING_SESSION_ID);
+  return json ? Number(json) : null;
 }

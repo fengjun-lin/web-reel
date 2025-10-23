@@ -104,7 +104,7 @@
 }
 
 /* Style for timestamp links */
-.ai-analysis-content a[href^="#seek:"] {
+.ai-analysis-content a[href^='#seek:'] {
   display: inline-block;
   background: #e6f7ff;
   border: 1px solid #91d5ff;
@@ -118,7 +118,7 @@
   transition: all 0.2s;
 }
 
-.ai-analysis-content a[href^="#seek:"]:hover {
+.ai-analysis-content a[href^='#seek:']:hover {
   background: #1890ff;
   color: white;
   border-color: #1890ff;
@@ -126,7 +126,7 @@
   box-shadow: 0 2px 4px rgba(24, 144, 255, 0.3);
 }
 
-.ai-analysis-content a[href^="#seek:"]:active {
+.ai-analysis-content a[href^='#seek:']:active {
   transform: translateY(0);
 }
 
@@ -226,4 +226,3 @@
 .ai-analysis-content-wrapper::-webkit-scrollbar-thumb:hover {
   background: #bfbfbf;
 }
-
