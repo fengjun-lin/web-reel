@@ -31,17 +31,21 @@
 ### Prerequisites
 
 - Node.js >= 20.19+ (Vite requirement)
-- npm or yarn
+- npm or pnpm or yarn
 
 ### Installation
 
 ```bash
+pnpm install
+# or
 npm install
 ```
 
 ### Development
 
 ```bash
+pnpm dev
+# or
 npm run dev
 ```
 
@@ -50,15 +54,35 @@ Visit `http://localhost:5174/#/`
 ### Build
 
 ```bash
-npm run build
+pnpm build:all
+# or
+npm run build:all
 ```
 
 ### Lint & Type Check
 
 ```bash
+pnpm lint
+pnpm typecheck
+# or
 npm run lint
 npm run typecheck
 ```
+
+## Deployment
+
+### Deploy to Vercel
+
+See detailed deployment instructions: [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md)
+
+Quick deploy with one click:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/web-reel&env=VITE_OPENAI_API_KEY&envDescription=OpenAI%20API%20Key%20for%20AI%20analysis%20features&envLink=https://platform.openai.com/api-keys)
+
+**Environment Variables Required:**
+- `VITE_OPENAI_API_KEY` - OpenAI API key (optional, can be configured at runtime)
+- `VITE_OPENAI_API_BASE` - OpenAI API base URL (optional)
+- `VITE_OPENAI_MODEL` - OpenAI model name (optional)
 
 ## Project Structure
 
