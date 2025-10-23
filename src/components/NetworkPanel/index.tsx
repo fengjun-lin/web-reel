@@ -1,78 +1,75 @@
-import { CopyOutlined } from '@ant-design/icons'
-import { Button, Descriptions, Drawer, Empty, Pagination, Space, Tag, Typography, message } from 'antd'
-import { useState } from 'react'
+import { CopyOutlined } from '@ant-design/icons';
+import { Button, Descriptions, Drawer, Empty, Pagination, Space, Tag, Typography, message } from 'antd';
+import { useState } from 'react';
 
-import type { HarEntry } from '@/types/har'
+import type { HarEntry } from '@/types/har';
 
-import './styles.css'
+import './styles.css';
 
-const { Text } = Typography
-const PAGE_SIZE = 20 // Show 20 requests per page
+const { Text } = Typography;
+const PAGE_SIZE = 20; // Show 20 requests per page
 
 interface NetworkPanelProps {
-  requests: HarEntry[]
-  currentTime?: number
-  onSeekToTime?: (timestamp: number) => void
+  requests: HarEntry[];
+  currentTime?: number;
+  onSeekToTime?: (_timestamp: number) => void;
 }
 
 function getStatusColor(status: number): string {
   if ((status >= 200 && status < 300) || status === 304) {
-    return 'success'
+    return 'success';
   } else if (status >= 400) {
-    return 'error'
+    return 'error';
   } else if (status >= 300) {
-    return 'warning'
+    return 'warning';
   }
-  return 'default'
+  return 'default';
 }
 
 function getEntryName(url: string): string {
   try {
-    const urlObj = new URL(url)
-    const pathname = urlObj.pathname
-    const index = pathname.lastIndexOf('/')
-    return pathname.slice(index + 1) || pathname
+    const urlObj = new URL(url);
+    const pathname = urlObj.pathname;
+    const index = pathname.lastIndexOf('/');
+    return pathname.slice(index + 1) || pathname;
   } catch {
-    return url
+    return url;
   }
 }
 
 function copyToClipboard(text: string) {
   navigator.clipboard.writeText(text).then(
     () => message.success('Copied to clipboard'),
-    () => message.error('Failed to copy')
-  )
+    () => message.error('Failed to copy'),
+  );
 }
 
 interface RequestItemProps {
-  entry: HarEntry
-  highlight: boolean
-  onDetailClick: (_entry: HarEntry) => void
-  onSeekToTime?: (timestamp: number) => void
+  entry: HarEntry;
+  highlight: boolean;
+  onDetailClick: (_entry: HarEntry) => void;
+  onSeekToTime?: (_timestamp: number) => void;
 }
 
 function RequestItem({ entry, highlight, onDetailClick, onSeekToTime }: RequestItemProps) {
-  const name = getEntryName(entry.request.url)
-  const statusColor = getStatusColor(entry.response.status)
-  const requestTime = Date.parse(entry.startedDateTime)
+  const name = getEntryName(entry.request.url);
+  const statusColor = getStatusColor(entry.response.status);
+  const requestTime = Date.parse(entry.startedDateTime);
 
   return (
-    <div 
-      className={`network-item ${highlight ? 'network-item-highlight' : ''}`}
-      onClick={() => onDetailClick(entry)}
-    >
+    <div className={`network-item ${highlight ? 'network-item-highlight' : ''}`} onClick={() => onDetailClick(entry)}>
       <div className="network-item-header">
         <Text strong className="network-item-name" title={entry.request.url}>
           {name}
         </Text>
         <Space size="small">
           {onSeekToTime && (
-            <Button 
-              type="link" 
-              size="small" 
+            <Button
+              type="link"
+              size="small"
               onClick={(e) => {
-                e.stopPropagation()
-                onSeekToTime(requestTime)
+                e.stopPropagation();
+                onSeekToTime(requestTime);
               }}
             >
               Seek →
@@ -93,24 +90,18 @@ function RequestItem({ entry, highlight, onDetailClick, onSeekToTime }: RequestI
         </Text>
       </Space>
     </div>
-  )
+  );
 }
 
 interface RequestDetailProps {
-  entry: HarEntry
-  visible: boolean
-  onClose: () => void
+  entry: HarEntry;
+  visible: boolean;
+  onClose: () => void;
 }
 
 function RequestDetail({ entry, visible, onClose }: RequestDetailProps) {
   return (
-    <Drawer
-      title="Request Details"
-      width={720}
-      placement="right"
-      onClose={onClose}
-      open={visible}
-    >
+    <Drawer title="Request Details" width={720} placement="right" onClose={onClose} open={visible}>
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
         {/* General Information */}
         <div>
@@ -127,15 +118,11 @@ function RequestDetail({ entry, visible, onClose }: RequestDetailProps) {
             </Descriptions.Item>
             <Descriptions.Item label="Method">{entry.request.method}</Descriptions.Item>
             <Descriptions.Item label="Status">
-              <Tag color={getStatusColor(entry.response.status)}>
-                {entry.response.status}
-              </Tag>
+              <Tag color={getStatusColor(entry.response.status)}>{entry.response.status}</Tag>
               {entry.response.statusText}
             </Descriptions.Item>
             <Descriptions.Item label="Time">{entry.time.toFixed(2)} ms</Descriptions.Item>
-            <Descriptions.Item label="Started">
-              {new Date(entry.startedDateTime).toLocaleString()}
-            </Descriptions.Item>
+            <Descriptions.Item label="Started">{new Date(entry.startedDateTime).toLocaleString()}</Descriptions.Item>
           </Descriptions>
         </div>
 
@@ -206,45 +193,43 @@ function RequestDetail({ entry, visible, onClose }: RequestDetailProps) {
         )}
       </Space>
     </Drawer>
-  )
+  );
 }
 
 export default function NetworkPanel({ requests, currentTime, onSeekToTime }: NetworkPanelProps) {
-  const [selectedEntry, setSelectedEntry] = useState<HarEntry | null>(null)
-  const [drawerVisible, setDrawerVisible] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
+  const [selectedEntry, setSelectedEntry] = useState<HarEntry | null>(null);
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Sort requests by time
-  const sortedRequests = [...requests].sort(
-    (a, b) => Date.parse(a.startedDateTime) - Date.parse(b.startedDateTime)
-  )
+  const sortedRequests = [...requests].sort((a, b) => Date.parse(a.startedDateTime) - Date.parse(b.startedDateTime));
 
   const handleDetailClick = (entry: HarEntry) => {
-    setSelectedEntry(entry)
-    setDrawerVisible(true)
-  }
+    setSelectedEntry(entry);
+    setDrawerVisible(true);
+  };
 
   const handleDrawerClose = () => {
-    setDrawerVisible(false)
-  }
+    setDrawerVisible(false);
+  };
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page)
-  }
+    setCurrentPage(page);
+  };
 
   // Find highlighted request based on current time
   const isHighlighted = (entry: HarEntry) => {
-    if (!currentTime) return false
-    const requestTime = Date.parse(entry.startedDateTime)
-    const timeDiff = Math.abs(requestTime - currentTime)
-    return timeDiff < 2000 // Within 2 seconds
-  }
+    if (!currentTime) return false;
+    const requestTime = Date.parse(entry.startedDateTime);
+    const timeDiff = Math.abs(requestTime - currentTime);
+    return timeDiff < 2000; // Within 2 seconds
+  };
 
   // Calculate paginated requests
-  const totalRequests = sortedRequests.length
-  const startIndex = (currentPage - 1) * PAGE_SIZE
-  const endIndex = startIndex + PAGE_SIZE
-  const paginatedRequests = sortedRequests.slice(startIndex, endIndex)
+  const totalRequests = sortedRequests.length;
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const endIndex = startIndex + PAGE_SIZE;
+  const paginatedRequests = sortedRequests.slice(startIndex, endIndex);
 
   return (
     <div className="network-panel">
@@ -261,13 +246,10 @@ export default function NetworkPanel({ requests, currentTime, onSeekToTime }: Ne
           />
         </div>
       )}
-      
+
       <div className="network-panel-content">
         {sortedRequests.length === 0 ? (
-          <Empty
-            description="No network requests recorded"
-            style={{ marginTop: 40 }}
-          />
+          <Empty description="No network requests recorded" style={{ marginTop: 40 }} />
         ) : (
           paginatedRequests.map((entry, index) => (
             <RequestItem
@@ -281,13 +263,7 @@ export default function NetworkPanel({ requests, currentTime, onSeekToTime }: Ne
         )}
       </div>
 
-      {selectedEntry && (
-        <RequestDetail
-          entry={selectedEntry}
-          visible={drawerVisible}
-          onClose={handleDrawerClose}
-        />
-      )}
+      {selectedEntry && <RequestDetail entry={selectedEntry} visible={drawerVisible} onClose={handleDrawerClose} />}
     </div>
-  )
+  );
 }

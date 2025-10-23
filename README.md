@@ -1,9 +1,10 @@
 <div align="center">
   <img src="./public/icon-reel.png" alt="Web Reel Logo" width="120" height="120">
-  
-  # Web Reel
-  
-  A lightweight, browser-based session recording and replay tool built with React, TypeScript, and rrweb.
+
+# Web Reel
+
+A lightweight, browser-based session recording and replay tool built with React, TypeScript, and rrweb.
+
 </div>
 
 ## Features
@@ -15,6 +16,8 @@
 - **Export/Import**: Export sessions as JSON or ZIP files
 - **IndexedDB Storage**: Local session storage with automatic cleanup
 - **Upload Control**: Server-controlled upload flag management
+- **Jira Integration**: Create bug tickets directly from replay sessions
+- **AI Analysis**: OpenAI-powered session analysis for debugging (optional)
 
 ## Tech Stack
 
@@ -188,18 +191,18 @@ Note: `rrweb` and `idb` are included with `@web-reel/recorder`.
 ##### Step 3: Initialize in your app
 
 ```typescript
-import { WebReelRecorder } from './recorder'
+import { WebReelRecorder } from './recorder';
 
 // Initialize when your app starts (e.g., in main.ts or App.tsx)
 const recorder = new WebReelRecorder({
-  env: 'test',                    // 'test' | 'online'
-  deviceId: 'user-device-id',     // Unique user identifier
-  appId: 1,                       // Your app ID
-  projectName: 'my-app',          // Unique project name (used for IndexedDB)
-  recordInterval: 2,              // Keep logs for N days (default: 2)
-  disabledDownLoad: false,        // Show download button (default: false)
-  enableStats: false,             // Enable statistics upload (default: false)
-})
+  env: 'test', // 'test' | 'online'
+  deviceId: 'user-device-id', // Unique user identifier
+  appId: 1, // Your app ID
+  projectName: 'my-app', // Unique project name (used for IndexedDB)
+  recordInterval: 2, // Keep logs for N days (default: 2)
+  disabledDownLoad: false, // Show download button (default: false)
+  enableStats: false, // Enable statistics upload (default: false)
+});
 
 // Recorder starts automatically!
 // A floating entry button will appear on the page
@@ -210,16 +213,16 @@ const recorder = new WebReelRecorder({
 ```typescript
 interface RecorderConfig {
   // Required fields
-  env: 'test' | 'online'          // Environment
-  appId: number                   // Application ID
-  projectName: string             // Project identifier (for IndexedDB namespace)
-  
+  env: 'test' | 'online'; // Environment
+  appId: number; // Application ID
+  projectName: string; // Project identifier (for IndexedDB namespace)
+
   // Optional fields
-  deviceId?: string               // Device/User ID (default: 'unknown_device')
-  recordInterval?: number         // Data retention in days (default: 2)
-                                  // -1 = never delete, 0 = keep only current session
-  disabledDownLoad?: boolean      // Hide download button (default: false)
-  enableStats?: boolean           // Enable PV/ENV stats upload (default: false)
+  deviceId?: string; // Device/User ID (default: 'unknown_device')
+  recordInterval?: number; // Data retention in days (default: 2)
+  // -1 = never delete, 0 = keep only current session
+  disabledDownLoad?: boolean; // Hide download button (default: false)
+  enableStats?: boolean; // Enable PV/ENV stats upload (default: false)
 }
 ```
 
@@ -227,31 +230,31 @@ interface RecorderConfig {
 
 ```typescript
 // Stop recording
-recorder.stop()
+recorder.stop();
 
 // Export logs to file
-await recorder.exportLog()        // Export as JSON
-await recorder.exportLog(true)    // Export as ZIP
+await recorder.exportLog(); // Export as JSON
+await recorder.exportLog(true); // Export as ZIP
 
 // Get current session ID
-const sessionId = recorder.getSessionId()
+const sessionId = recorder.getSessionId();
 
 // Check initialization status
-const isReady = recorder.isInitialized()
+const isReady = recorder.isInitialized();
 
 // Access database directly (advanced usage)
-const db = recorder.getDB()
+const db = recorder.getDB();
 ```
 
 ##### Example: React Integration
 
 ```tsx
 // App.tsx
-import { useEffect, useRef } from 'react'
-import { WebReelRecorder } from './recorder'
+import { useEffect, useRef } from 'react';
+import { WebReelRecorder } from './recorder';
 
 function App() {
-  const recorderRef = useRef<WebReelRecorder>()
+  const recorderRef = useRef<WebReelRecorder>();
 
   useEffect(() => {
     // Initialize recorder when app mounts
@@ -263,15 +266,15 @@ function App() {
       recordInterval: 7, // Keep 7 days
       disabledDownLoad: import.meta.env.MODE === 'production', // Hide in production
       enableStats: true,
-    })
+    });
 
     // Cleanup on unmount
     return () => {
-      recorderRef.current?.stop()
-    }
-  }, [])
+      recorderRef.current?.stop();
+    };
+  }, []);
 
-  return <YourApp />
+  return <YourApp />;
 }
 ```
 
@@ -279,9 +282,9 @@ function App() {
 
 ```typescript
 // main.ts
-import { createApp } from 'vue'
-import { WebReelRecorder } from './recorder'
-import App from './App.vue'
+import { createApp } from 'vue';
+import { WebReelRecorder } from './recorder';
+import App from './App.vue';
 
 // Initialize recorder
 const recorder = new WebReelRecorder({
@@ -292,15 +295,15 @@ const recorder = new WebReelRecorder({
   recordInterval: 7,
   disabledDownLoad: false,
   enableStats: true,
-})
+});
 
 // Create Vue app
-const app = createApp(App)
+const app = createApp(App);
 
 // Provide recorder to all components (optional)
-app.provide('recorder', recorder)
+app.provide('recorder', recorder);
 
-app.mount('#app')
+app.mount('#app');
 ```
 
 ##### Example: Vanilla JS Integration
@@ -308,8 +311,8 @@ app.mount('#app')
 ```html
 <!-- index.html -->
 <script type="module">
-  import { WebReelRecorder } from './recorder/index.js'
-  
+  import { WebReelRecorder } from './recorder/index.js';
+
   // Initialize when DOM is ready
   document.addEventListener('DOMContentLoaded', () => {
     window.recorder = new WebReelRecorder({
@@ -320,8 +323,8 @@ app.mount('#app')
       recordInterval: 2,
       disabledDownLoad: false,
       enableStats: false,
-    })
-  })
+    });
+  });
 </script>
 ```
 
@@ -336,6 +339,7 @@ app.mount('#app')
 ### Testing
 
 Visit `http://localhost:5174/#/test` to access the built-in testing page with:
+
 - Recording controls
 - Real-time session statistics
 - Test action buttons
@@ -351,17 +355,17 @@ You can modify the network interceptor to filter specific requests:
 // src/recorder/core.ts - Modify shouldIgnoreUrl method
 private shouldIgnoreUrl(url: string): boolean {
   const apiPrefix = getApiPrefix(this.config.env)
-  
+
   // Ignore your API requests
   if (url.includes(apiPrefix)) return true
-  
+
   // Ignore analytics
   if (url.includes('google-analytics.com')) return true
   if (url.includes('facebook.com/tr')) return true
-  
+
   // Ignore large files
   if (url.match(/\.(mp4|mov|avi|pdf)$/)) return true
-  
+
   return false
 }
 ```
@@ -372,7 +376,7 @@ Only record in specific conditions:
 
 ```typescript
 // Only record for specific users
-const shouldRecord = user.role === 'beta-tester' || user.hasIssue
+const shouldRecord = user.role === 'beta-tester' || user.hasIssue;
 
 if (shouldRecord) {
   const recorder = new WebReelRecorder({
@@ -380,22 +384,22 @@ if (shouldRecord) {
     deviceId: user.id,
     appId: 1,
     projectName: 'my-app',
-  })
+  });
 }
 ```
 
 ### Manual Export with Custom Naming
 
 ```typescript
-import { exportToFile, exportToZip } from './recorder/export'
+import { exportToFile, exportToZip } from './recorder/export';
 
 // Get data from recorder
-const eventDataMap = await recorder.getDB().getByIndexKey('renderEvent', 'sessionId')
-const responseDataMap = await recorder.getDB().getByIndexKey('responseData', 'sessionId')
+const eventDataMap = await recorder.getDB().getByIndexKey('renderEvent', 'sessionId');
+const responseDataMap = await recorder.getDB().getByIndexKey('responseData', 'sessionId');
 
 // Export with custom filename
-await exportToFile(eventDataMap, responseDataMap, 'bug-report-issue-123')
-await exportToZip(eventDataMap, responseDataMap, 'session-user-456')
+await exportToFile(eventDataMap, responseDataMap, 'bug-report-issue-123');
+await exportToZip(eventDataMap, responseDataMap, 'session-user-456');
 ```
 
 ### Server-Side Upload (with enableStats: true)
@@ -404,11 +408,11 @@ If you enable statistics upload, configure your backend API:
 
 ```typescript
 // Backend API endpoints (see src/services/api.ts)
-POST /api/upload-pv-stat    // Page view statistics
-POST /api/upload-env-stat   // Environment info (UA, storage size)
-GET  /api/get-upload-flag   // Check if should upload logs
-POST /api/set-upload-flag   // Set upload permission
-POST /api/upload-logs       // Upload session logs
+POST / api / upload - pv - stat; // Page view statistics
+POST / api / upload - env - stat; // Environment info (UA, storage size)
+GET / api / get - upload - flag; // Check if should upload logs
+POST / api / set - upload - flag; // Set upload permission
+POST / api / upload - logs; // Upload session logs
 ```
 
 Backend example (Express.js):
@@ -416,8 +420,8 @@ Backend example (Express.js):
 ```typescript
 // server.js
 app.post('/api/upload-logs', async (req, res) => {
-  const { appId, deviceId, sessionId, domData, networkData } = req.body
-  
+  const { appId, deviceId, sessionId, domData, networkData } = req.body;
+
   // Save to database
   await db.sessions.create({
     appId,
@@ -426,10 +430,10 @@ app.post('/api/upload-logs', async (req, res) => {
     domData: JSON.parse(domData),
     networkData: JSON.parse(networkData),
     createdAt: new Date(),
-  })
-  
-  res.json({ errNo: 0, data: { success: true } })
-})
+  });
+
+  res.json({ errNo: 0, data: { success: true } });
+});
 ```
 
 ### Privacy & Security Best Practices
@@ -441,32 +445,36 @@ app.post('/api/upload-logs', async (req, res) => {
 // Modify src/recorder/core.ts - initializeRecording()
 
 this.stopRecordingFn = record({
-  emit: async (event: eventWithTime) => { /* ... */ },
-  recordLog: true,
-  
-  // Add masking configuration
-  maskAllInputs: true,              // Mask all input values
-  maskInputOptions: {
-    password: true,                 // Mask password fields
-    email: true,                    // Mask email fields
-    tel: true,                      // Mask phone numbers
+  emit: async (event: eventWithTime) => {
+    /* ... */
   },
-  maskTextSelector: '.sensitive',   // Mask elements with this class
-  blockClass: 'no-record',          // Don't record these elements
-  ignoreClass: 'ignore-record',     // Ignore mutations on these
-} as any)
+  recordLog: true,
+
+  // Add masking configuration
+  maskAllInputs: true, // Mask all input values
+  maskInputOptions: {
+    password: true, // Mask password fields
+    email: true, // Mask email fields
+    tel: true, // Mask phone numbers
+  },
+  maskTextSelector: '.sensitive', // Mask elements with this class
+  blockClass: 'no-record', // Don't record these elements
+  ignoreClass: 'ignore-record', // Ignore mutations on these
+} as any);
 ```
 
 #### 2. Don't Record Sensitive Pages
 
 ```typescript
 // main.ts
-const sensitiveRoutes = ['/payment', '/settings/security', '/admin']
-const currentPath = window.location.pathname
+const sensitiveRoutes = ['/payment', '/settings/security', '/admin'];
+const currentPath = window.location.pathname;
 
-if (!sensitiveRoutes.some(route => currentPath.startsWith(route))) {
+if (!sensitiveRoutes.some((route) => currentPath.startsWith(route))) {
   // Only initialize recorder on non-sensitive pages
-  new WebReelRecorder({ /* config */ })
+  new WebReelRecorder({
+    /* config */
+  });
 }
 ```
 
@@ -474,19 +482,48 @@ if (!sensitiveRoutes.some(route => currentPath.startsWith(route))) {
 
 ```typescript
 // After successful upload
-await recorder.getDB().clear('renderEvent')
-await recorder.getDB().clear('responseData')
+await recorder.getDB().clear('renderEvent');
+await recorder.getDB().clear('responseData');
 ```
 
-## API Configuration
+## Environment Configuration
+
+### Jira Integration
+
+Web Reel supports creating Jira tickets directly from the Replayer page. To enable this feature, create a `.env.local` file in the project root with the following variables:
+
+```bash
+# Jira Configuration
+VITE_JIRA_API_KEY=your_jira_api_token_here
+VITE_JIRA_DOMAIN=your-domain.atlassian.net
+VITE_JIRA_USER_EMAIL=your.email@example.com
+VITE_JIRA_PROJECT_KEY=PROJ
+
+# OpenAI Configuration (Optional - for AI-powered session analysis)
+VITE_OPENAI_API_KEY=sk-your-openai-api-key
+VITE_OPENAI_API_BASE=https://api.openai.com/v1
+VITE_OPENAI_MODEL=gpt-4o-mini
+```
+
+**How to get Jira API Token:**
+
+1. Log in to your Atlassian account
+2. Go to [Account Settings](https://id.atlassian.com/manage-profile/security/api-tokens)
+3. Click "Create API token"
+4. Give it a name (e.g., "Web Reel Integration")
+5. Copy the token and add it to `.env.local`
+
+**Security Note:** Never commit `.env.local` to version control. It's already included in `.gitignore`.
+
+### API Configuration
 
 By default, the API endpoints are set to `http://localhost:3000/api`.
 
 To change the API prefix, edit `src/services/http.ts`:
 
 ```typescript
-export const API_PREFIX_TEST = 'http://your-api-domain.com/api'
-export const API_PREFIX_ONLINE = 'http://your-api-domain.com/api'
+export const API_PREFIX_TEST = 'http://your-api-domain.com/api';
+export const API_PREFIX_ONLINE = 'http://your-api-domain.com/api';
 ```
 
 ## Data Format
@@ -532,11 +569,11 @@ export const API_PREFIX_ONLINE = 'http://your-api-domain.com/api'
 
 This project uses **rrweb 1.1.3** (stable) instead of the latest 2.x alpha version because:
 
-✅ **Production Ready**: 1.x is battle-tested in production environments  
-✅ **Stable API**: No breaking changes expected  
-✅ **Better Documentation**: More community examples and solutions  
-✅ **Console Recording**: Built-in `recordLog: true` option (no separate plugin needed)  
-✅ **Smaller Bundle**: ~17% smaller than 2.x alpha  
+✅ **Production Ready**: 1.x is battle-tested in production environments
+✅ **Stable API**: No breaking changes expected
+✅ **Better Documentation**: More community examples and solutions
+✅ **Console Recording**: Built-in `recordLog: true` option (no separate plugin needed)
+✅ **Smaller Bundle**: ~17% smaller than 2.x alpha
 ⚠️ **2.x Status**: Currently in alpha with potential API changes
 
 ### rrweb 1.x Console Recording
@@ -546,12 +583,15 @@ In rrweb 1.x, console recording is enabled via configuration:
 ```typescript
 // rrweb 1.x - Simple configuration
 record({
-  emit: (event) => { /* ... */ },
-  recordLog: true,  // Built-in console recording
-})
+  emit: (event) => {
+    /* ... */
+  },
+  recordLog: true, // Built-in console recording
+});
 ```
 
 **Not needed in 1.x:**
+
 - ❌ Separate `@rrweb/rrweb-plugin-console-record` package
 - ❌ Plugin import and configuration
 - ❌ Additional setup code
@@ -561,22 +601,27 @@ record({
 When 2.x becomes stable, migration will require:
 
 1. Update dependencies:
+
 ```bash
 npm install rrweb@^2.0.0 @rrweb/rrweb-plugin-console-record
 ```
 
 2. Change console recording:
+
 ```typescript
 // rrweb 2.x - Requires plugin
-import { getRecordConsolePlugin } from '@rrweb/rrweb-plugin-console-record'
+import { getRecordConsolePlugin } from '@rrweb/rrweb-plugin-console-record';
 
 record({
-  emit: (event) => { /* ... */ },
+  emit: (event) => {
+    /* ... */
+  },
   plugins: [getRecordConsolePlugin()],
-})
+});
 ```
 
 3. Update player configuration:
+
 ```typescript
 // 1.x uses 'replayOptions'
 // 2.x uses 'replayerConfig'
@@ -587,6 +632,7 @@ record({
 ### Code Quality
 
 All code follows:
+
 - ESLint rules (see `eslint.config.js`)
 - TypeScript strict mode
 - Prettier formatting (see `prettier.config.cjs`)
