@@ -15,6 +15,7 @@ A lightweight, browser-based session recording and replay tool built with React,
 - **Console Logs**: Capture and display console output during replay
 - **Export/Import**: Export sessions as JSON or ZIP files
 - **IndexedDB Storage**: Local session storage with automatic cleanup
+- **Session Persistence**: Server-side storage with Neon Postgres (full CRUD API)
 - **Upload Control**: Server-controlled upload flag management
 - **Jira Integration**: Create bug tickets directly from replay sessions
 - **AI Analysis**: OpenAI-powered session analysis for debugging (optional)
@@ -24,7 +25,7 @@ A lightweight, browser-based session recording and replay tool built with React,
 - **Frontend**: React 19 + TypeScript + Next.js 16 (App Router)
 - **UI Library**: Ant Design 5
 - **Recording**: rrweb 1.1.3 (stable) + rrweb-player 0.7.14
-- **Storage**: IndexedDB (idb 8.x)
+- **Storage**: IndexedDB (idb 8.x) + Neon Postgres (pg-promise 12.x)
 - **Routing**: Next.js App Router (file-based routing)
 - **State Management**: React Hooks
 - **Compression**: JSZip 3.x
@@ -91,6 +92,7 @@ Quick deploy with one click:
 
 Server-side (secure, not exposed to browser):
 
+- `DATABASE_URL` - Neon Postgres connection string (required for session persistence)
 - `OPENAI_API_KEY` - OpenAI API key (optional, can be configured at runtime)
 - `JIRA_API_KEY` - Jira API token (optional)
 - `JIRA_USER_EMAIL` - Jira user email (optional)
@@ -101,6 +103,8 @@ Client-side (exposed to browser):
 - `NEXT_PUBLIC_OPENAI_MODEL` - OpenAI model name (optional, default: gpt-4o-mini)
 - `NEXT_PUBLIC_JIRA_DOMAIN` - Jira domain (optional)
 - `NEXT_PUBLIC_JIRA_PROJECT_KEY` - Jira project key (optional)
+
+See [env.example](./env.example) for detailed setup instructions.
 
 ## Project Structure
 
@@ -563,6 +567,33 @@ To change the API prefix, edit `src/services/http.ts`:
 export const API_PREFIX_TEST = 'http://your-api-domain.com/api';
 export const API_PREFIX_ONLINE = 'http://your-api-domain.com/api';
 ```
+
+### Session Persistence API
+
+Web Reel includes a full CRUD API for persisting sessions to a Neon Postgres database.
+
+**Setup:**
+
+1. Configure `DATABASE_URL` in `.env.local` (see `env.example`)
+2. Initialize the database: `npm run db:init`
+3. Use the REST API endpoints
+
+**API Endpoints:**
+
+- `POST /api/sessions` - Upload a session zip file
+- `GET /api/sessions` - List all sessions (with pagination & filtering)
+- `GET /api/sessions/[id]` - Get a single session (includes file data)
+- `PATCH /api/sessions/[id]` - Update session metadata or file
+- `DELETE /api/sessions/[id]` - Delete a session
+
+**Features:**
+
+- Binary storage of zip files (< 20MB) using BYTEA
+- Optional metadata: `jira_id`, `platform`, `device_id`
+- Automatic timestamps: `created_at`, `updated_at`
+- Indexed queries for fast filtering
+
+**Documentation:** See [docs/session-api.md](./docs/session-api.md) for detailed API documentation with examples.
 
 ## Data Format
 
