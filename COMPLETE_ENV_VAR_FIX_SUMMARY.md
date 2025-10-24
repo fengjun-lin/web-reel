@@ -335,7 +335,7 @@ src/components/CreateJiraModal/index.tsx
 
 - `ENV_VAR_FIX_V2.md` - OpenAI 详细修复文档
 - `JIRA_ENV_VAR_FIX.md` - Jira 详细修复文档
-- `env.template` - 环境变量模板
+- `env.example` - 环境变量模板
 
 ## 架构示意图
 

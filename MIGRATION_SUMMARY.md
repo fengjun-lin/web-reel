@@ -224,8 +224,7 @@ All documentation has been updated to reflect Next.js migration:
 **Updated Files:**
 
 - ✅ `README.md` - Tech stack, environment variables, dev server URL
-- ✅ `env.template` - All variable names and security notes
-- ✅ `.env.example` - Created standard environment variable template
+- ✅ `env.example` - All variable names and security notes
 - ✅ `OPENAI_SETUP.md` - Setup instructions and examples
 - ✅ `QUICK_START.md` - Quick start commands and config
 - ✅ `VERCEL_DEPLOYMENT.md` - Deployment guide and env vars

@@ -507,7 +507,7 @@ To configure environment variables:
 
 ```bash
 # Copy the example file
-cp .env.example .env.local
+cp env.example .env.local
 
 # Edit with your actual values
 nano .env.local
