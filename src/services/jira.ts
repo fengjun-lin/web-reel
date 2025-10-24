@@ -36,52 +36,42 @@ function createJiraClient(): Version3Client {
 }
 
 /**
- * Create a Jira ticket
+ * Create a Jira ticket via server-side API
+ * This is more secure as credentials never leave the server
  */
 export async function createJiraTicket(options: CreateTicketOptions): Promise<CreateTicketResult> {
   const { summary, description, issueType = 'Bug' } = options;
-  const config = getJiraConfig();
 
   try {
-    const client = createJiraClient();
-
-    // Create the issue
-    const issue = await client.issues.createIssue({
-      fields: {
-        project: {
-          key: config.projectKey,
-        },
-        summary,
-        description: {
-          type: 'doc',
-          version: 1,
-          content: [
-            {
-              type: 'paragraph',
-              content: [
-                {
-                  type: 'text',
-                  text: description,
-                },
-              ],
-            },
-          ],
-        },
-        issuetype: {
-          name: issueType,
-        },
+    // Call our server-side API endpoint instead of using jira.js client directly
+    const response = await fetch('/api/jira/tickets', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        summary,
+        description,
+        issueType,
+      }),
     });
 
-    const issueKey = issue.key;
-    const issueUrl = `https://${config.domain}/browse/${issueKey}`;
+    const data = await response.json();
 
-    console.log('Jira ticket created successfully:', issueKey);
+    if (!response.ok || !data.success) {
+      console.error('Failed to create Jira ticket:', data);
+      return {
+        success: false,
+        error: data.error || 'Failed to create ticket',
+      };
+    }
+
+    console.log('Jira ticket created successfully:', data.issueKey);
 
     return {
       success: true,
-      issueKey,
-      issueUrl,
+      issueKey: data.issueKey,
+      issueUrl: data.issueUrl,
     };
   } catch (error) {
     console.error('Failed to create Jira ticket:', error);
@@ -89,8 +79,6 @@ export async function createJiraTicket(options: CreateTicketOptions): Promise<Cr
     let errorMessage = 'Unknown error';
     if (error instanceof Error) {
       errorMessage = error.message;
-    } else if (typeof error === 'object' && error !== null) {
-      errorMessage = JSON.stringify(error);
     }
 
     return {

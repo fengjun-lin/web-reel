@@ -3,8 +3,6 @@
  * Handles communication with OpenAI API for session analysis
  */
 
-import { getOpenAIConfig } from '@/config/openai';
-
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -28,37 +26,30 @@ export interface AnalysisResult {
 }
 
 /**
- * Call OpenAI Chat Completion API
+ * Call OpenAI Chat Completion API via our server proxy
+ * This is more secure as the API key never leaves the server
  */
 export async function chatCompletion(options: ChatCompletionOptions): Promise<AnalysisResult> {
-  const config = getOpenAIConfig();
   const { messages, temperature = 0.7, maxTokens = 2000, stream = false, onChunk } = options;
 
-  const apiUrl = `${config.apiBase}/chat/completions`;
-
   try {
-    const response = await fetch(apiUrl, {
+    // Call our server-side API proxy instead of OpenAI directly
+    const response = await fetch('/api/openai/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${config.apiKey}`,
       },
       body: JSON.stringify({
-        model: config.model,
         messages,
         temperature,
-        max_tokens: maxTokens,
+        maxTokens,
         stream,
       }),
     });
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
-      throw new Error(
-        `OpenAI API error: ${response.status} ${response.statusText}${
-          error.error?.message ? ` - ${error.error.message}` : ''
-        }`,
-      );
+      throw new Error(error.error || `API error: ${response.status} ${response.statusText}`);
     }
 
     // Handle streaming response
@@ -68,15 +59,14 @@ export async function chatCompletion(options: ChatCompletionOptions): Promise<An
 
     // Handle non-streaming response
     const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error || 'API call failed');
+    }
+
     return {
-      content: data.choices[0]?.message?.content || '',
-      usage: data.usage
-        ? {
-            promptTokens: data.usage.prompt_tokens,
-            completionTokens: data.usage.completion_tokens,
-            totalTokens: data.usage.total_tokens,
-          }
-        : undefined,
+      content: data.content || '',
+      usage: data.usage,
     };
   } catch (error) {
     console.error('OpenAI API call failed:', error);

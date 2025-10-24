@@ -5,14 +5,14 @@
 
 import { CheckCircleOutlined, CloseCircleOutlined, EyeInvisibleOutlined, EyeOutlined } from '@ant-design/icons';
 import { Alert, Button, Card, Divider, Form, Input, Space, Spin, Tabs, Typography, message } from 'antd';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import ConfigViewer from '@/components/ConfigViewer';
 import {
+  checkEnvConfig,
   clearRuntimeConfig,
   getOpenAIConfig,
   getRuntimeConfig,
-  isOpenAIConfigured,
   saveRuntimeConfig,
   validateApiKey,
 } from '@/config/openai';
@@ -25,9 +25,23 @@ export default function OpenAISettings() {
   const [showApiKey, setShowApiKey] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [envConfigStatus, setEnvConfigStatus] = useState<{ hasApiKey: boolean; loading: boolean }>({
+    hasApiKey: false,
+    loading: true,
+  });
 
-  const isConfigured = isOpenAIConfigured();
   const runtimeConfig = getRuntimeConfig();
+  const isConfigured = runtimeConfig?.apiKey || envConfigStatus.hasApiKey;
+
+  // Check environment configuration on mount
+  useEffect(() => {
+    checkEnvConfig().then((config) => {
+      setEnvConfigStatus({
+        hasApiKey: config.hasApiKey,
+        loading: false,
+      });
+    });
+  }, []);
 
   const handleSave = async (values: any) => {
     try {
@@ -46,6 +60,13 @@ export default function OpenAISettings() {
 
       message.success('Configuration saved successfully!');
       setTestResult(null);
+
+      // Refresh configuration status
+      const config = await checkEnvConfig();
+      setEnvConfigStatus({
+        hasApiKey: config.hasApiKey || !!values.apiKey,
+        loading: false,
+      });
     } catch (error) {
       console.error('Failed to save configuration:', error);
       message.error('Failed to save configuration');
@@ -76,11 +97,18 @@ export default function OpenAISettings() {
     }
   };
 
-  const handleClear = () => {
+  const handleClear = async () => {
     clearRuntimeConfig();
     form.resetFields();
     setTestResult(null);
     message.success('Configuration cleared');
+
+    // Refresh configuration status
+    const config = await checkEnvConfig();
+    setEnvConfigStatus({
+      hasApiKey: config.hasApiKey,
+      loading: false,
+    });
   };
 
   const handleLoadCurrent = () => {
@@ -140,7 +168,12 @@ export default function OpenAISettings() {
           <Space direction="vertical" size="small" style={{ width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text strong>Configuration Status:</Text>
-              {isConfigured ? (
+              {envConfigStatus.loading ? (
+                <Space>
+                  <Spin size="small" />
+                  <Text type="secondary">Checking...</Text>
+                </Space>
+              ) : isConfigured ? (
                 <Space>
                   <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 16 }} />
                   <Text type="success">Configured</Text>
@@ -155,6 +188,11 @@ export default function OpenAISettings() {
             {runtimeConfig && (
               <Text type="secondary" style={{ fontSize: 12 }}>
                 Using runtime configuration from browser storage
+              </Text>
+            )}
+            {!runtimeConfig && envConfigStatus.hasApiKey && !envConfigStatus.loading && (
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                Using API key from environment variables (.env.local)
               </Text>
             )}
           </Space>

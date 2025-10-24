@@ -19,14 +19,57 @@ const STORAGE_KEY = 'web-reel-jira-config';
 
 /**
  * Get Jira configuration from environment variables
+ * Note: This only works on the server side for JIRA_API_KEY and JIRA_USER_EMAIL
+ * Client-side code should use the API endpoint /api/jira/config
  */
 export function getEnvConfig(): Partial<JiraConfig> {
+  // Check if we're on the server side
+  const isServer = typeof window === 'undefined';
+
   return {
-    apiKey: process.env.JIRA_API_KEY,
-    userEmail: process.env.JIRA_USER_EMAIL,
+    apiKey: isServer ? process.env.JIRA_API_KEY : undefined,
+    userEmail: isServer ? process.env.JIRA_USER_EMAIL : undefined,
     domain: process.env.NEXT_PUBLIC_JIRA_DOMAIN || 'web-reel.atlassian.net',
     projectKey: process.env.NEXT_PUBLIC_JIRA_PROJECT_KEY || 'WR',
   };
+}
+
+/**
+ * Check if environment has Jira configured (client-safe)
+ * This function fetches from the server API to check configuration status
+ */
+export async function checkEnvConfig(): Promise<{
+  hasApiKey: boolean;
+  hasUserEmail: boolean;
+  domain: string;
+  projectKey: string;
+}> {
+  try {
+    const response = await fetch('/api/jira/config');
+    const data = await response.json();
+    if (data.success) {
+      return {
+        hasApiKey: data.config.hasApiKey,
+        hasUserEmail: data.config.hasUserEmail,
+        domain: data.config.domain,
+        projectKey: data.config.projectKey,
+      };
+    }
+    return {
+      hasApiKey: false,
+      hasUserEmail: false,
+      domain: '',
+      projectKey: '',
+    };
+  } catch (error) {
+    console.error('Failed to check env config:', error);
+    return {
+      hasApiKey: false,
+      hasUserEmail: false,
+      domain: '',
+      projectKey: '',
+    };
+  }
 }
 
 /**

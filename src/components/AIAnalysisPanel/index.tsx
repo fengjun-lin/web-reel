@@ -8,7 +8,7 @@ import { Alert, Button, Empty, Space, Spin, Typography, message } from 'antd';
 import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 
-import { isOpenAIConfigured } from '@/config/openai';
+import { checkEnvConfig, getRuntimeConfig } from '@/config/openai';
 import { chatCompletion } from '@/services/openai';
 import type { LogInfo } from '@/types';
 import type { HarEntry } from '@/types/har';
@@ -30,9 +30,30 @@ export default function AIAnalysisPanel({ logs, requests, onOpenSettings, onSeek
   const [analysis, setAnalysis] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [streamingContent, setStreamingContent] = useState<string>('');
+  const [configStatus, setConfigStatus] = useState<{ isConfigured: boolean; loading: boolean }>({
+    isConfigured: false,
+    loading: true,
+  });
   const contentRef = useRef<HTMLDivElement>(null);
 
-  const isConfigured = isOpenAIConfigured();
+  // Check configuration status on mount
+  useEffect(() => {
+    const checkConfig = async () => {
+      const runtimeConfig = getRuntimeConfig();
+      if (runtimeConfig?.apiKey) {
+        setConfigStatus({ isConfigured: true, loading: false });
+        return;
+      }
+
+      const envConfig = await checkEnvConfig();
+      setConfigStatus({
+        isConfigured: envConfig.hasApiKey,
+        loading: false,
+      });
+    };
+
+    checkConfig();
+  }, []);
 
   // Handle seek link clicks
   useEffect(() => {
@@ -133,8 +154,22 @@ export default function AIAnalysisPanel({ logs, requests, onOpenSettings, onSeek
     }
   };
 
+  // Show loading state while checking configuration
+  if (configStatus.loading) {
+    return (
+      <div className="ai-analysis-panel">
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+          <Space direction="vertical" size="middle" style={{ textAlign: 'center' }}>
+            <Spin size="large" />
+            <Text type="secondary">Checking configuration...</Text>
+          </Space>
+        </div>
+      </div>
+    );
+  }
+
   // Show configuration prompt if not configured
-  if (!isConfigured) {
+  if (!configStatus.isConfigured) {
     return (
       <div className="ai-analysis-panel">
         <Empty

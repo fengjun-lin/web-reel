@@ -4,16 +4,34 @@
  */
 
 import { CheckCircleOutlined, CloseCircleOutlined, EyeOutlined } from '@ant-design/icons';
-import { Alert, Card, Descriptions, Space, Tag, Typography } from 'antd';
+import { Alert, Card, Descriptions, Space, Spin, Tag, Typography } from 'antd';
+import { useEffect, useState } from 'react';
 
-import { getEnvConfig, getRuntimeConfig, isOpenAIConfigured } from '@/config/openai';
+import { checkEnvConfig, getRuntimeConfig } from '@/config/openai';
 
 const { Text, Paragraph } = Typography;
 
 export default function ConfigViewer() {
-  const envConfig = getEnvConfig();
+  const [envConfig, setEnvConfig] = useState<{ hasApiKey: boolean; apiBase: string; model: string; loading: boolean }>({
+    hasApiKey: false,
+    apiBase: '',
+    model: '',
+    loading: true,
+  });
   const runtimeConfig = getRuntimeConfig();
-  const isConfigured = isOpenAIConfigured();
+  const isConfigured = runtimeConfig?.apiKey || envConfig.hasApiKey;
+
+  // Fetch environment configuration from server
+  useEffect(() => {
+    checkEnvConfig().then((config) => {
+      setEnvConfig({
+        hasApiKey: config.hasApiKey,
+        apiBase: config.apiBase,
+        model: config.model,
+        loading: false,
+      });
+    });
+  }, []);
 
   const maskApiKey = (key?: string) => {
     if (!key) return 'Not set';
@@ -30,7 +48,12 @@ export default function ConfigViewer() {
             <Text strong style={{ fontSize: 16 }}>
               OpenAI Configuration Status
             </Text>
-            {isConfigured ? (
+            {envConfig.loading ? (
+              <Space>
+                <Spin size="small" />
+                <Text type="secondary">Loading...</Text>
+              </Space>
+            ) : isConfigured ? (
               <Tag icon={<CheckCircleOutlined />} color="success">
                 Configured
               </Tag>
@@ -48,7 +71,13 @@ export default function ConfigViewer() {
         title={
           <Space>
             <Text>Environment Variables (.env.local)</Text>
-            {envConfig.apiKey ? <Tag color="success">Set</Tag> : <Tag color="default">Not Set</Tag>}
+            {envConfig.loading ? (
+              <Spin size="small" />
+            ) : envConfig.hasApiKey ? (
+              <Tag color="success">Set</Tag>
+            ) : (
+              <Tag color="default">Not Set</Tag>
+            )}
           </Space>
         }
         size="small"
@@ -56,8 +85,8 @@ export default function ConfigViewer() {
         <Descriptions column={1} size="small" bordered>
           <Descriptions.Item label="API Key">
             <Space>
-              <Text code>{maskApiKey(envConfig.apiKey)}</Text>
-              {!envConfig.apiKey && <Text type="secondary">(Not configured)</Text>}
+              <Text code>{envConfig.hasApiKey ? 'sk-***...***' : 'Not set'}</Text>
+              {!envConfig.hasApiKey && <Text type="secondary">(Not configured)</Text>}
             </Space>
           </Descriptions.Item>
           <Descriptions.Item label="API Base">

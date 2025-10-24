@@ -18,13 +18,40 @@ const STORAGE_KEY = 'web-reel-openai-config';
 
 /**
  * Get OpenAI configuration from environment variables
+ * Note: This only works on the server side for OPENAI_API_KEY
+ * Client-side code should use the API endpoint /api/openai/config
  */
 export function getEnvConfig(): Partial<OpenAIConfig> {
+  // Check if we're on the server side
+  const isServer = typeof window === 'undefined';
+
   return {
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey: isServer ? process.env.OPENAI_API_KEY : undefined,
     apiBase: process.env.NEXT_PUBLIC_OPENAI_API_BASE || 'https://api.openai.com/v1',
     model: process.env.NEXT_PUBLIC_OPENAI_MODEL || 'gpt-4o-mini',
   };
+}
+
+/**
+ * Check if environment has API key configured (client-safe)
+ * This function fetches from the server API to check configuration status
+ */
+export async function checkEnvConfig(): Promise<{ hasApiKey: boolean; apiBase: string; model: string }> {
+  try {
+    const response = await fetch('/api/openai/config');
+    const data = await response.json();
+    if (data.success) {
+      return {
+        hasApiKey: data.config.hasApiKey,
+        apiBase: data.config.apiBase,
+        model: data.config.model,
+      };
+    }
+    return { hasApiKey: false, apiBase: '', model: '' };
+  } catch (error) {
+    console.error('Failed to check env config:', error);
+    return { hasApiKey: false, apiBase: '', model: '' };
+  }
 }
 
 /**
@@ -67,10 +94,10 @@ export function clearRuntimeConfig(): void {
 
 /**
  * Get merged configuration (runtime config takes precedence)
+ * This works on both client and server side
  */
 export function getOpenAIConfig(): OpenAIConfig {
   const envConfig = getEnvConfig();
-  console.log('envConfig!!', envConfig);
   const runtimeConfig = getRuntimeConfig();
 
   const merged = {

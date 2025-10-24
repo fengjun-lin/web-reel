@@ -4,10 +4,10 @@
  */
 
 import { CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
-import { Modal, Form, Input, Button, message, Space, Typography } from 'antd';
-import { useState } from 'react';
+import { Modal, Form, Input, Button, message, Space, Spin, Typography } from 'antd';
+import { useEffect, useState } from 'react';
 
-import { isJiraConfigured } from '@/config/jira';
+import { checkEnvConfig, getRuntimeConfig } from '@/config/jira';
 import { createJiraTicket } from '@/services/jira';
 
 const { TextArea } = Input;
@@ -26,9 +26,40 @@ export default function CreateJiraModal({ visible, onClose, sessionId }: CreateJ
     issueKey: string;
     issueUrl: string;
   } | null>(null);
+  const [configStatus, setConfigStatus] = useState<{
+    isConfigured: boolean;
+    loading: boolean;
+  }>({
+    isConfigured: false,
+    loading: true,
+  });
 
-  // Check if Jira is configured
-  const jiraConfigured = isJiraConfigured();
+  // Check configuration status on mount and when modal opens
+  useEffect(() => {
+    if (visible) {
+      checkConfig();
+    }
+  }, [visible]);
+
+  const checkConfig = async () => {
+    setConfigStatus({ isConfigured: false, loading: true });
+
+    // Check runtime config first (localStorage)
+    const runtimeConfig = getRuntimeConfig();
+    if (runtimeConfig?.apiKey && runtimeConfig?.userEmail) {
+      setConfigStatus({ isConfigured: true, loading: false });
+      return;
+    }
+
+    // Check environment config via API
+    const envConfig = await checkEnvConfig();
+    setConfigStatus({
+      isConfigured: envConfig.hasApiKey && envConfig.hasUserEmail,
+      loading: false,
+    });
+  };
+
+  const jiraConfigured = configStatus.isConfigured;
 
   // Handle form submission
   const handleSubmit = async () => {
@@ -110,14 +141,28 @@ Additional Information:
         ) : (
           <Space>
             <Button onClick={handleClose}>Cancel</Button>
-            <Button type="primary" onClick={handleSubmit} loading={loading} disabled={!jiraConfigured}>
+            <Button
+              type="primary"
+              onClick={handleSubmit}
+              loading={loading}
+              disabled={!jiraConfigured || configStatus.loading}
+            >
               Create Ticket
             </Button>
           </Space>
         )
       }
     >
-      {!jiraConfigured && (
+      {configStatus.loading && (
+        <div style={{ marginBottom: 16, textAlign: 'center', padding: '16px 0' }}>
+          <Space direction="vertical" size="small">
+            <Spin />
+            <Text type="secondary">Checking Jira configuration...</Text>
+          </Space>
+        </div>
+      )}
+
+      {!configStatus.loading && !jiraConfigured && (
         <div style={{ marginBottom: 16 }}>
           <Space direction="vertical" style={{ width: '100%' }}>
             <Text type="warning">
@@ -150,7 +195,12 @@ Additional Information:
           </div>
         </Space>
       ) : (
-        <Form form={form} layout="vertical" initialValues={initialValues} disabled={!jiraConfigured}>
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={initialValues}
+          disabled={!jiraConfigured || configStatus.loading}
+        >
           <Form.Item
             name="summary"
             label="Summary"
