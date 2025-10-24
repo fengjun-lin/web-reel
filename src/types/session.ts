@@ -8,7 +8,8 @@
  */
 export interface Session {
   id: number;
-  file: Buffer; // Binary zip file data
+  blob_url: string; // Vercel Blob public URL
+  file_size: number; // File size in bytes
   jira_id: string | null;
   platform: string | null;
   device_id: string | null;
@@ -44,7 +45,7 @@ export interface CreateSessionRequest {
  * Request payload for updating an existing session
  */
 export interface UpdateSessionRequest {
-  file?: Buffer; // Optional: replace the file
+  file?: Buffer; // Optional: replace the file (will trigger blob re-upload)
   jira_id?: string;
   platform?: string;
   device_id?: string;
@@ -57,6 +58,7 @@ export interface CreateSessionResponse {
   success: boolean;
   session?: {
     id: number;
+    file_size: number;
     created_at: string;
     jira_id: string | null;
     platform: string | null;
@@ -72,7 +74,8 @@ export interface GetSessionResponse {
   success: boolean;
   session?: {
     id: number;
-    file: string; // Base64 encoded zip file
+    blob_url: string; // Vercel Blob public URL to download the zip file
+    file_size: number;
     jira_id: string | null;
     platform: string | null;
     device_id: string | null;

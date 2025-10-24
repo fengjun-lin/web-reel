@@ -85,6 +85,7 @@ export async function POST(request: NextRequest) {
         success: true,
         session: {
           id: session.id,
+          file_size: session.file_size,
           created_at: session.created_at.toISOString(),
           jira_id: session.jira_id,
           platform: session.platform,

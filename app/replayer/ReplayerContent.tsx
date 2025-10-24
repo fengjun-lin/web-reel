@@ -52,22 +52,110 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
-  const loadSessionById = (id: string) => {
+  const loadSessionById = async (id: string) => {
     try {
       setLoading(true);
-      const sessionsJson = sessionStorage.getItem('uploadedSessions');
 
-      if (!sessionsJson) {
-        // message.error('No sessions found. Please upload a session file first.');
+      // Fetch session metadata from API
+      const response = await fetch(`/api/sessions/${id}`);
+      const data = await response.json();
+
+      if (!data.success || !data.session) {
+        message.error('Session not found');
         setLoading(false);
         return;
       }
 
-      const sessions: RecordCollection = JSON.parse(sessionsJson);
-      const session = sessions[id];
+      console.log('[Replay] Session metadata fetched:', {
+        id: data.session.id,
+        file_size: data.session.file_size,
+        blob_url: data.session.blob_url,
+      });
+
+      // Fetch ZIP file from Vercel Blob
+      const blobResponse = await fetch(data.session.blob_url);
+      if (!blobResponse.ok) {
+        throw new Error(`Failed to fetch session file: ${blobResponse.statusText}`);
+      }
+
+      const blobBuffer = await blobResponse.arrayBuffer();
+      console.log('[Replay] ZIP file fetched, size:', blobBuffer.byteLength);
+
+      // Unzip and process (using existing logic)
+      const zip = new JSZip();
+      const zipContent = await zip.loadAsync(blobBuffer);
+
+      // List all files in the ZIP
+      const files = Object.keys(zipContent.files).filter((name) => !zipContent.files[name]?.dir);
+      console.log('[Replay] Files in ZIP:', files);
+
+      // Try to find the JSON file - either 'data.json' or any .json file
+      let jsonFile = zipContent.file('data.json');
+
+      if (!jsonFile) {
+        // If data.json not found, look for any .json file
+        const jsonFileName = files.find((name) => name.toLowerCase().endsWith('.json'));
+        if (jsonFileName) {
+          console.log('[Replay] data.json not found, using:', jsonFileName);
+          jsonFile = zipContent.file(jsonFileName);
+        }
+      }
+
+      if (!jsonFile) {
+        console.error('[Replay] No JSON file found in ZIP. Available files:', files);
+        message.error(`Invalid zip file: No JSON file found. Found: ${files.join(', ')}`);
+        setLoading(false);
+        return;
+      }
+
+      console.log('[Replay] Reading JSON from ZIP...');
+      const jsonText = await jsonFile.async('string');
+      console.log('[Replay] JSON text length:', jsonText.length);
+      const collection: RecordCollection = JSON.parse(jsonText);
+      console.log('[Replay] Parsed collection, sessions:', Object.keys(collection).length);
+
+      // Check if the collection is in the correct format or needs conversion
+      let normalizedCollection: RecordCollection = collection;
+
+      if ('eventData' in collection && Array.isArray(collection.eventData)) {
+        // This is the old format, convert it
+        console.log('[Replay] Detected old format, converting...');
+        const timestamp = String(Date.now());
+        const eventData = collection.eventData as any[];
+        const responseData = (Array.isArray(collection.responseData) ? collection.responseData : []) as HarEntry[];
+        normalizedCollection = {
+          [timestamp]: {
+            eventData,
+            responseData,
+          },
+        };
+        console.log('[Replay] Converted to new format with timestamp:', timestamp);
+      }
+
+      const sessionIds = Object.keys(normalizedCollection);
+      console.log('[Replay] Session IDs:', sessionIds);
+
+      if (sessionIds.length === 0) {
+        message.error('No sessions found in file');
+        setLoading(false);
+        return;
+      }
+
+      // Load the most recent session
+      const latestSessionId = sessionIds.sort((a, b) => parseInt(b, 10) - parseInt(a, 10))[0];
+      console.log('[Replay] Latest session ID:', latestSessionId);
+
+      if (!latestSessionId) {
+        message.error('No valid session ID found');
+        setLoading(false);
+        return;
+      }
+
+      const session = normalizedCollection[latestSessionId];
+      console.log('[Replay] Session eventData length:', session?.eventData?.length);
 
       if (!session) {
-        message.error(`Session ${id} not found`);
+        message.error('Failed to parse session data');
         setLoading(false);
         return;
       }
