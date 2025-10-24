@@ -76,11 +76,20 @@ export class WebReelRecorder {
    * Parse and validate configuration
    */
   private parseConfig(config: RecorderConfig): RecorderConfig {
+    // Set default upload endpoint based on environment if not provided
+    let uploadEndpoint = config.uploadEndpoint;
+    if (!uploadEndpoint && config.env === 'online') {
+      // Default production endpoint
+      uploadEndpoint = 'https://tubi-web-reel.vercel.app/api/sessions';
+      console.log('[Web-Reel] Using default production upload endpoint');
+    }
+
     return {
       ...config,
       recordInterval: config.recordInterval ?? 2, // Default 2 days
       disabledDownLoad: config.disabledDownLoad ?? false,
       enableStats: config.enableStats ?? false, // Default disabled
+      uploadEndpoint,
     };
   }
 
@@ -392,7 +401,18 @@ export class WebReelRecorder {
    */
   private shouldIgnoreUrl(url: string): boolean {
     const apiPrefix = getApiPrefix(this.config.env);
-    return url.includes(apiPrefix);
+
+    // Ignore SDK's own API calls
+    if (url.includes(apiPrefix)) {
+      return true;
+    }
+
+    // Ignore upload endpoint to prevent recording our own upload requests
+    if (this.config.uploadEndpoint && url.includes(this.config.uploadEndpoint)) {
+      return true;
+    }
+
+    return false;
   }
 
   /**
@@ -551,6 +571,9 @@ export class WebReelRecorder {
     }
 
     try {
+      // Show circular progress indicator
+      const progressIndicator = this.showUploadProgress();
+
       // Prepare upload options
       const uploadOptions: UploadOptions = {
         endpoint: this.config.uploadEndpoint,
@@ -560,12 +583,24 @@ export class WebReelRecorder {
         jiraId: this.config.jiraId,
         onProgress: (progress) => {
           console.log(`[Web-Reel Upload] Progress: ${progress.toFixed(1)}%`);
+          progressIndicator.updateProgress(progress);
         },
         onSuccess: (response) => {
           console.log('[Web-Reel Upload] ✅ Upload successful:', response);
+          progressIndicator.remove();
+
+          // Show replay link if session id is available
+          if (response.session?.id) {
+            const replayUrl = `https://tubi-web-reel.vercel.app/replayer/${response.session.id}`;
+            console.log(`[Web-Reel Upload] 🎬 View replay: ${replayUrl}`);
+
+            // Show browser notification with clickable link
+            this.showUploadSuccessNotification(replayUrl);
+          }
         },
         onError: (error) => {
           console.error('[Web-Reel Upload] ❌ Upload failed:', error);
+          progressIndicator.remove();
         },
       };
 
@@ -586,6 +621,228 @@ export class WebReelRecorder {
     } catch (error) {
       console.error('[Web-Reel Upload] ❌ Upload failed:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Show circular upload progress indicator inside button
+   */
+  private showUploadProgress() {
+    const buttonElement = this.entryButton?.getElement();
+    if (!buttonElement) {
+      return {
+        updateProgress: () => {},
+        remove: () => {},
+      };
+    }
+
+    // Hide the SVG icon
+    const svgIcon = buttonElement.querySelector('svg');
+    if (svgIcon) {
+      (svgIcon as SVGElement).style.display = 'none';
+    }
+
+    // Create circular progress wrapper
+    const progressWrapper = document.createElement('div');
+    progressWrapper.className = 'web-reel-progress-wrapper';
+    progressWrapper.style.cssText = `
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 2;
+      pointer-events: none;
+    `;
+
+    // SVG circle progress - conservative size to fit inside button with border-radius
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '32');
+    svg.setAttribute('height', '32');
+    svg.style.cssText = 'transform: rotate(-90deg);';
+
+    // Background circle
+    const bgCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    bgCircle.setAttribute('cx', '16');
+    bgCircle.setAttribute('cy', '16');
+    bgCircle.setAttribute('r', '13');
+    bgCircle.setAttribute('fill', 'none');
+    bgCircle.setAttribute('stroke', 'rgba(255, 255, 255, 0.3)');
+    bgCircle.setAttribute('stroke-width', '2.5');
+
+    // Progress circle
+    const progressCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    progressCircle.setAttribute('cx', '16');
+    progressCircle.setAttribute('cy', '16');
+    progressCircle.setAttribute('r', '13');
+    progressCircle.setAttribute('fill', 'none');
+    progressCircle.setAttribute('stroke', 'white');
+    progressCircle.setAttribute('stroke-width', '2.5');
+    progressCircle.setAttribute('stroke-linecap', 'round');
+
+    const circumference = 2 * Math.PI * 13;
+    progressCircle.style.strokeDasharray = `${circumference}`;
+    progressCircle.style.strokeDashoffset = `${circumference}`;
+    progressCircle.style.transition = 'stroke-dashoffset 0.3s ease';
+
+    svg.appendChild(bgCircle);
+    svg.appendChild(progressCircle);
+
+    // Percentage text (smaller, inside the circle)
+    const percentText = document.createElement('div');
+    percentText.style.cssText = `
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 10px;
+      font-weight: 700;
+      color: white;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    `;
+    percentText.textContent = '0%';
+
+    progressWrapper.appendChild(svg);
+    progressWrapper.appendChild(percentText);
+
+    // Add to button
+    buttonElement.appendChild(progressWrapper);
+
+    // Return controller
+    return {
+      updateProgress: (progress: number) => {
+        const offset = circumference - (progress / 100) * circumference;
+        progressCircle.style.strokeDashoffset = `${offset}`;
+        percentText.textContent = `${Math.round(progress)}%`;
+      },
+      remove: () => {
+        // Remove progress wrapper
+        if (progressWrapper.parentNode) {
+          progressWrapper.parentNode.removeChild(progressWrapper);
+        }
+        // Show SVG icon again
+        if (svgIcon) {
+          (svgIcon as SVGElement).style.display = '';
+        }
+      },
+    };
+  }
+
+  /**
+   * Show upload success notification with replay link
+   */
+  private showUploadSuccessNotification(replayUrl: string): void {
+    // Create a custom notification toast
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px 24px;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4), 0 4px 16px rgba(0, 0, 0, 0.2);
+      z-index: 100001;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+      max-width: 400px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      animation: slideInDown 0.5s ease;
+    `;
+
+    toast.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="font-size: 32px;">🎬</div>
+        <div style="flex: 1;">
+          <div style="font-weight: 600; font-size: 16px; margin-bottom: 4px;">Upload Successful!</div>
+          <div style="font-size: 13px; opacity: 0.9;">Click here to view the replay</div>
+        </div>
+        <div style="font-size: 20px;">→</div>
+      </div>
+    `;
+
+    // Add animation keyframes
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideInDown {
+        from {
+          transform: translateY(-100px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+      @keyframes slideOutUp {
+        from {
+          transform: translateY(0);
+          opacity: 1;
+        }
+        to {
+          transform: translateY(-100px);
+          opacity: 0;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Add hover effect
+    toast.addEventListener('mouseenter', () => {
+      toast.style.transform = 'scale(1.05)';
+      toast.style.boxShadow = '0 12px 40px rgba(102, 126, 234, 0.5), 0 6px 20px rgba(0, 0, 0, 0.25)';
+    });
+
+    toast.addEventListener('mouseleave', () => {
+      toast.style.transform = 'scale(1)';
+      toast.style.boxShadow = '0 8px 32px rgba(102, 126, 234, 0.4), 0 4px 16px rgba(0, 0, 0, 0.2)';
+    });
+
+    // Click to open replay
+    toast.addEventListener('click', () => {
+      window.open(replayUrl, '_blank');
+      removeToast();
+    });
+
+    // Add to page
+    document.body.appendChild(toast);
+
+    // Auto remove after 15 seconds
+    const removeToast = () => {
+      toast.style.animation = 'slideOutUp 0.5s ease';
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.parentNode.removeChild(toast);
+        }
+        if (style.parentNode) {
+          style.parentNode.removeChild(style);
+        }
+      }, 500);
+    };
+
+    setTimeout(removeToast, 15000);
+
+    // Also try browser notification as fallback
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const notification = new Notification('Web-Reel: Upload Successful! 🎬', {
+        body: 'Click to view the replay',
+        icon: 'https://tubi-web-reel.vercel.app/icon-reel.png',
+        tag: 'web-reel-upload',
+        requireInteraction: false,
+      });
+
+      notification.onclick = () => {
+        window.open(replayUrl, '_blank');
+        notification.close();
+      };
+
+      setTimeout(() => {
+        notification.close();
+      }, 10000);
     }
   }
 

@@ -190,15 +190,15 @@ export default function CreateJiraModal({
   // Initialize form with default values
   const initialValues = {
     summary: `Bug Report: Session ${sessionId || 'Unknown'}`,
-    description: `## Environment
+    description: `h3. Environment
 
-## Precondition
+h3. Precondition
 
-## Steps
+h3. Steps
 
-## Expected result
+h3. Expected result
 
-## Actual result
+h3. Actual result
 `,
   };
 
@@ -348,7 +348,7 @@ export default function CreateJiraModal({
 /* ==================== Helper Functions ==================== */
 
 /**
- * Format AI result into Jira description (with ## headers)
+ * Format AI result into Jira description (using Jira Wiki Markup)
  */
 function formatAIResultToDescription(
   aiResult: {
@@ -364,41 +364,40 @@ function formatAIResultToDescription(
   const sections: string[] = [];
 
   // Environment Section
-  sections.push(`## Environment`);
-  sections.push(`Session ID: ${sessionId || 'Unknown'}`);
-  sections.push(`Issue Type: ${aiResult.type || 'Unknown'}`);
+  sections.push(`h3. Environment`);
+  sections.push(`*Session ID:* ${sessionId || 'Unknown'}`);
+  sections.push(`*Issue Type:* ${aiResult.type || 'Unknown'}`);
   if (aiResult.labels && aiResult.labels.length > 0) {
-    sections.push(`Labels: ${aiResult.labels.join(', ')}`);
+    sections.push(`*Labels:* ${aiResult.labels.join(', ')}`);
   }
-  sections.push(`Timestamp: ${new Date(data.sessionStartTime || Date.now()).toISOString()}`);
+  sections.push(`*Timestamp:* ${new Date(data.sessionStartTime || Date.now()).toISOString()}`);
   sections.push('');
 
   // Precondition Section
-  sections.push(`## Precondition`);
+  sections.push(`h3. Precondition`);
   sections.push(`${aiResult.summary || 'Issue detected in session'}`);
-  sections.push(`Console Errors: ${data.summary.errorCount} | Network Errors: ${data.summary.networkErrorCount}`);
+  sections.push(`*Console Errors:* ${data.summary.errorCount} | *Network Errors:* ${data.summary.networkErrorCount}`);
   sections.push('');
 
   // Steps Section
-  sections.push(`## Steps`);
+  sections.push(`h3. Steps`);
   if (aiResult.evidence && aiResult.evidence.length > 0) {
-    aiResult.evidence.forEach((item, i) => {
-      sections.push(`${i + 1}. ${item}`);
+    aiResult.evidence.forEach((item) => {
+      sections.push(`# ${item}`);
     });
   } else if (data.errors.length > 0 || data.networkErrors.length > 0) {
-    let stepNum = 1;
     if (data.errors.length > 0 && data.errors[0]) {
-      sections.push(`${stepNum++}. ${data.errors[0].message}`);
+      sections.push(`# ${data.errors[0].message}`);
     }
     if (data.networkErrors.length > 0 && data.networkErrors[0]) {
       const req = data.networkErrors[0];
-      sections.push(`${stepNum}. ${req.method} ${req.url} returned ${req.status}`);
+      sections.push(`# ${req.method} ${req.url} returned ${req.status}`);
     }
   }
   sections.push('');
 
   // Expected Result Section
-  sections.push(`## Expected result`);
+  sections.push(`h3. Expected result`);
   if (aiResult.fix) {
     sections.push(aiResult.fix);
   } else {
@@ -407,23 +406,30 @@ function formatAIResultToDescription(
   sections.push('');
 
   // Actual Result Section
-  sections.push(`## Actual result`);
+  sections.push(`h3. Actual result`);
   if (aiResult.summary) {
     sections.push(aiResult.summary);
   }
 
-  // Add critical error details
+  // Add critical error details in a panel
   if (data.errors.length > 0 && data.errors[0]) {
     sections.push('');
-    sections.push(`Error: ${data.errors[0].message}`);
+    sections.push(
+      `{panel:title=Error Details|borderStyle=solid|borderColor=#ccc|titleBGColor=#F7D6C1|bgColor=#FFFFCE}`,
+    );
+    sections.push(`*Error:* {{${data.errors[0].message}}}`);
+    sections.push(`{panel}`);
   }
 
   if (data.networkErrors.length > 0 && data.networkErrors[0]) {
     const topNetworkError = data.networkErrors[0];
     sections.push('');
     sections.push(
-      `${topNetworkError.method} ${topNetworkError.url} → ${topNetworkError.status} ${topNetworkError.statusText}`,
+      `{panel:title=Network Error|borderStyle=solid|borderColor=#ccc|titleBGColor=#F7D6C1|bgColor=#FFFFCE}`,
     );
+    sections.push(`*Request:* {{${topNetworkError.method}}} ${topNetworkError.url}`);
+    sections.push(`*Status:* {color:red}${topNetworkError.status} ${topNetworkError.statusText}{color}`);
+    sections.push(`{panel}`);
   }
 
   return sections.join('\n');

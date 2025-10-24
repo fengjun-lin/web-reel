@@ -23,6 +23,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "buffer": "^6.0.3",
     "idb": "^8.0.3",
     "jszip": "^3.10.1",
     "rrweb": "^1.1.3"

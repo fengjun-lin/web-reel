@@ -166,14 +166,21 @@ export function installXhrInterceptor(config: XhrConfig): () => void {
 
   // Override open method
   OriginalXHR!.prototype.open = function (method: string, url: string, ...args: any[]) {
-    const requestData: XhrRequestData = {
-      method: method.toUpperCase(),
-      url,
-      headers: {},
-      startTime: Date.now(),
-    };
+    // Safely create request data, ensuring url is a string
+    try {
+      const requestData: XhrRequestData = {
+        method: method ? method.toUpperCase() : 'GET',
+        url: url || '',
+        headers: {},
+        startTime: Date.now(),
+      };
 
-    requestDataMap.set(this, requestData);
+      requestDataMap.set(this, requestData);
+    } catch (error) {
+      // Silently ignore errors in tracking
+      console.debug('[XHR Interceptor] Failed to track request:', error);
+    }
+
     return originalOpen!.apply(this, [method, url, ...args] as any);
   };
 
@@ -191,30 +198,52 @@ export function installXhrInterceptor(config: XhrConfig): () => void {
     const xhr = this;
     const requestData = requestDataMap.get(xhr);
 
-    if (requestData) {
-      requestData.body = body;
-      requestData.startTime = Date.now();
+    if (requestData && requestData.url) {
+      try {
+        requestData.body = body;
+        requestData.startTime = Date.now();
 
-      // Call onRequest hook
-      config.onRequest?.(requestData);
+        // Call onRequest hook safely
+        try {
+          config.onRequest?.(requestData);
+        } catch (error) {
+          console.debug('[XHR Interceptor] Error in onRequest hook:', error);
+        }
 
-      // Add event listeners for response
-      const onLoad = () => {
-        requestData.endTime = Date.now();
-        const entry = createHarEntry(requestData, xhr, false);
-        config.onResponse?.(entry);
-      };
+        // Add event listeners for response
+        const onLoad = () => {
+          const currentRequestData = requestDataMap.get(xhr);
+          if (!currentRequestData || !currentRequestData.url) return; // Safely handle missing request data
 
-      const onError = () => {
-        requestData.endTime = Date.now();
-        const entry = createHarEntry(requestData, xhr, true);
-        config.onError?.(entry);
-      };
+          try {
+            currentRequestData.endTime = Date.now();
+            const entry = createHarEntry(currentRequestData, xhr, false);
+            config.onResponse?.(entry);
+          } catch (error) {
+            console.debug('[XHR Interceptor] Error in onLoad:', error);
+          }
+        };
 
-      xhr.addEventListener('load', onLoad);
-      xhr.addEventListener('error', onError);
-      xhr.addEventListener('abort', onError);
-      xhr.addEventListener('timeout', onError);
+        const onError = () => {
+          const currentRequestData = requestDataMap.get(xhr);
+          if (!currentRequestData || !currentRequestData.url) return; // Safely handle missing request data
+
+          try {
+            currentRequestData.endTime = Date.now();
+            const entry = createHarEntry(currentRequestData, xhr, true);
+            config.onError?.(entry);
+          } catch (error) {
+            console.debug('[XHR Interceptor] Error in onError:', error);
+          }
+        };
+
+        xhr.addEventListener('load', onLoad);
+        xhr.addEventListener('error', onError);
+        xhr.addEventListener('abort', onError);
+        xhr.addEventListener('timeout', onError);
+      } catch (error) {
+        console.debug('[XHR Interceptor] Error in send method:', error);
+      }
     }
 
     return originalSend!.apply(xhr, [body]);

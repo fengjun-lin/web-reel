@@ -187,7 +187,7 @@ const STYLES = `
   border-color: transparent rgba(0, 0, 0, 0.92) transparent transparent;
 }
 
-/* Pulse animation for attention */
+/* Pulse animation for hover only */
 .web-reel-entry-button::after {
   content: '';
   position: absolute;
@@ -199,7 +199,11 @@ const STYLES = `
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   opacity: 0;
   transform: translate(-50%, -50%) scale(1);
-  animation: pulse 2s ease-out infinite;
+  animation: none;
+}
+
+.web-reel-entry-button:hover::after {
+  animation: pulse 1.5s ease-out infinite;
 }
 
 @keyframes pulse {

@@ -80,14 +80,14 @@ export class EntryButton {
     // Set icon and text based on mode
     const isUploadMode = this.options.mode === 'upload';
     button.innerHTML = isUploadMode ? UPLOAD_ICON_SVG : DOWNLOAD_ICON_SVG;
-    button.title = isUploadMode ? 'Upload Session Recording' : 'Export Session Recording';
+    button.title = isUploadMode ? 'Report an Issue' : 'Download to Local';
     button.setAttribute('role', 'button');
-    button.setAttribute('aria-label', isUploadMode ? 'Upload Session Recording' : 'Export Session Recording');
+    button.setAttribute('aria-label', isUploadMode ? 'Report an Issue' : 'Download to Local');
 
     // Add tooltip element
     const tooltip = document.createElement('span');
     tooltip.className = 'web-reel-entry-button-tooltip';
-    tooltip.textContent = isUploadMode ? 'Upload Session Recording' : 'Export Session Recording';
+    tooltip.textContent = isUploadMode ? 'Report an Issue' : 'Download to Local';
     button.appendChild(tooltip);
 
     return button;
@@ -173,13 +173,13 @@ export class EntryButton {
     // Update icon and text
     const isUploadMode = mode === 'upload';
     this.element.innerHTML = isUploadMode ? UPLOAD_ICON_SVG : DOWNLOAD_ICON_SVG;
-    this.element.title = isUploadMode ? 'Upload Session Recording' : 'Export Session Recording';
-    this.element.setAttribute('aria-label', isUploadMode ? 'Upload Session Recording' : 'Export Session Recording');
+    this.element.title = isUploadMode ? 'Report an Issue' : 'Download to Local';
+    this.element.setAttribute('aria-label', isUploadMode ? 'Report an Issue' : 'Download to Local');
 
     // Update tooltip
     const tooltip = document.createElement('span');
     tooltip.className = 'web-reel-entry-button-tooltip';
-    tooltip.textContent = isUploadMode ? 'Upload Session Recording' : 'Export Session Recording';
+    tooltip.textContent = isUploadMode ? 'Report an Issue' : 'Download to Local';
     this.element.appendChild(tooltip);
   }
 
