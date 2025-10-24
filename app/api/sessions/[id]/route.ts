@@ -27,14 +27,12 @@ export async function GET(request: NextRequest, segmentData: { params: Promise<{
     // Get session from database
     const session = await getSessionById(id);
 
-    // Convert file buffer to base64 for transport
-    const fileBase64 = session.file.toString('base64');
-
     return NextResponse.json<GetSessionResponse>({
       success: true,
       session: {
         id: session.id,
-        file: fileBase64,
+        blob_url: session.blob_url,
+        file_size: session.file_size,
         jira_id: session.jira_id,
         platform: session.platform,
         device_id: session.device_id,

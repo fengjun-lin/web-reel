@@ -3,6 +3,8 @@
  * Handles all database operations for replay sessions
  */
 
+import { put, del } from '@vercel/blob';
+
 import { db } from '@/lib/db';
 import type {
   Session,
@@ -31,14 +33,23 @@ export async function createSession(data: CreateSessionRequest): Promise<Session
     );
   }
 
+  // Upload file to Vercel Blob
+  const timestamp = Date.now();
+  const blob = await put(`sessions/session-${timestamp}.zip`, data.file, {
+    access: 'public',
+    addRandomSuffix: true,
+  });
+
+  // Store metadata in database
   const query = `
-    INSERT INTO sessions (file, jira_id, platform, device_id)
-    VALUES ($1, $2, $3, $4)
-    RETURNING id, file, jira_id, platform, device_id, created_at, updated_at
+    INSERT INTO sessions (blob_url, file_size, jira_id, platform, device_id)
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING id, blob_url, file_size, jira_id, platform, device_id, created_at, updated_at
   `;
 
   const session = await db.one<Session>(query, [
-    data.file,
+    blob.url,
+    data.file.length,
     data.jira_id || null,
     data.platform || null,
     data.device_id || null,
@@ -50,12 +61,12 @@ export async function createSession(data: CreateSessionRequest): Promise<Session
 /**
  * Get a session by ID
  * @param id Session ID
- * @returns Session with file data
+ * @returns Session with blob URL and metadata
  * @throws Error if session not found
  */
 export async function getSessionById(id: number): Promise<Session> {
   const query = `
-    SELECT id, file, jira_id, platform, device_id, created_at, updated_at
+    SELECT id, blob_url, file_size, jira_id, platform, device_id, created_at, updated_at
     FROM sessions
     WHERE id = $1
   `;
@@ -107,7 +118,7 @@ export async function listSessions(params: ListSessionsParams = {}): Promise<{
   const countResult = await db.one<{ count: string }>(countQuery, values);
   const total = parseInt(countResult.count, 10);
 
-  // Get sessions with metadata (exclude file data for performance)
+  // Get sessions with metadata (file_size is already stored in DB)
   const query = `
     SELECT 
       id, 
@@ -116,7 +127,7 @@ export async function listSessions(params: ListSessionsParams = {}): Promise<{
       device_id, 
       created_at, 
       updated_at,
-      LENGTH(file) as file_size
+      file_size
     FROM sessions
     ${whereClause}
     ORDER BY created_at DESC
@@ -140,21 +151,43 @@ export async function listSessions(params: ListSessionsParams = {}): Promise<{
  * @throws Error if session not found or file size exceeds limit
  */
 export async function updateSession(id: number, updates: UpdateSessionRequest): Promise<Session> {
-  // Validate file size if file is being updated
-  if (updates.file && updates.file.length > MAX_FILE_SIZE) {
-    throw new Error(
-      `File size exceeds maximum allowed size of 20MB (got ${(updates.file.length / 1024 / 1024).toFixed(2)}MB)`,
-    );
-  }
-
   // Build SET clauses dynamically
   const setClauses: string[] = [];
   const values: any[] = [];
   let paramIndex = 1;
 
+  // If file is being updated, handle blob replacement
   if (updates.file !== undefined) {
-    setClauses.push(`file = $${paramIndex++}`);
-    values.push(updates.file);
+    // Validate file size
+    if (updates.file.length > MAX_FILE_SIZE) {
+      throw new Error(
+        `File size exceeds maximum allowed size of 20MB (got ${(updates.file.length / 1024 / 1024).toFixed(2)}MB)`,
+      );
+    }
+
+    // Get old blob URL for deletion
+    const oldSession = await getSessionById(id);
+
+    // Upload new file to Vercel Blob
+    const timestamp = Date.now();
+    const blob = await put(`sessions/session-${timestamp}.zip`, updates.file, {
+      access: 'public',
+      addRandomSuffix: true,
+    });
+
+    // Delete old blob using the old blob URL
+    try {
+      await del(oldSession.blob_url);
+    } catch (error) {
+      console.warn('[Session Service] Failed to delete old blob:', error);
+      // Continue anyway - new blob is uploaded
+    }
+
+    // Update blob-related fields
+    setClauses.push(`blob_url = $${paramIndex++}`);
+    values.push(blob.url);
+    setClauses.push(`file_size = $${paramIndex++}`);
+    values.push(updates.file.length);
   }
 
   if (updates.jira_id !== undefined) {
@@ -181,7 +214,7 @@ export async function updateSession(id: number, updates: UpdateSessionRequest): 
     UPDATE sessions
     SET ${setClauses.join(', ')}
     WHERE id = $${paramIndex}
-    RETURNING id, file, jira_id, platform, device_id, created_at, updated_at
+    RETURNING id, blob_url, file_size, jira_id, platform, device_id, created_at, updated_at
   `;
 
   values.push(id);
@@ -202,6 +235,10 @@ export async function updateSession(id: number, updates: UpdateSessionRequest): 
  * @throws Error if session not found
  */
 export async function deleteSession(id: number): Promise<boolean> {
+  // Get session to retrieve blob URL
+  const session = await getSessionById(id);
+
+  // Delete from database first
   const query = `
     DELETE FROM sessions
     WHERE id = $1
@@ -212,6 +249,14 @@ export async function deleteSession(id: number): Promise<boolean> {
 
   if (!result) {
     throw new Error(`Session with ID ${id} not found`);
+  }
+
+  // Delete blob from Vercel Blob storage using the blob URL
+  try {
+    await del(session.blob_url);
+  } catch (error) {
+    console.warn('[Session Service] Failed to delete blob from Vercel:', error);
+    // Don't throw - database record is already deleted
   }
 
   return true;

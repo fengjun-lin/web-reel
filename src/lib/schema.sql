@@ -9,7 +9,8 @@ DROP TABLE IF EXISTS sessions;
 -- Create sessions table
 CREATE TABLE sessions (
     id SERIAL PRIMARY KEY,
-    file BYTEA NOT NULL,                        -- Binary zip file data (< 20MB)
+    blob_url TEXT NOT NULL,                     -- Vercel Blob public URL
+    file_size INTEGER NOT NULL,                 -- File size in bytes
     jira_id VARCHAR(255),                       -- Optional Jira ticket ID
     platform VARCHAR(100),                       -- Optional platform identifier
     device_id VARCHAR(255),                      -- Optional device identifier
@@ -38,9 +39,9 @@ CREATE TRIGGER update_sessions_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- Add comments for documentation
-COMMENT ON TABLE sessions IS 'Stores Web Reel replay session files and metadata';
-COMMENT ON COLUMN sessions.file IS 'Binary zip file containing session replay data (uncompressed JSON inside)';
+COMMENT ON TABLE sessions IS 'Stores Web Reel replay session metadata and file references';
+COMMENT ON COLUMN sessions.blob_url IS 'Vercel Blob public URL for the session zip file';
+COMMENT ON COLUMN sessions.file_size IS 'Size of the session file in bytes';
 COMMENT ON COLUMN sessions.jira_id IS 'Associated Jira ticket ID';
 COMMENT ON COLUMN sessions.platform IS 'Platform where session was recorded (e.g., web, mobile)';
 COMMENT ON COLUMN sessions.device_id IS 'Device identifier for the session';
-
