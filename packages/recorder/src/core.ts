@@ -658,32 +658,32 @@ export class WebReelRecorder {
       pointer-events: none;
     `;
 
-    // SVG circle progress - conservative size to fit inside button with border-radius
+    // SVG circle progress - larger size for better visibility
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('width', '32');
-    svg.setAttribute('height', '32');
+    svg.setAttribute('width', '44');
+    svg.setAttribute('height', '44');
     svg.style.cssText = 'transform: rotate(-90deg);';
 
     // Background circle
     const bgCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    bgCircle.setAttribute('cx', '16');
-    bgCircle.setAttribute('cy', '16');
-    bgCircle.setAttribute('r', '13');
+    bgCircle.setAttribute('cx', '22');
+    bgCircle.setAttribute('cy', '22');
+    bgCircle.setAttribute('r', '19');
     bgCircle.setAttribute('fill', 'none');
     bgCircle.setAttribute('stroke', 'rgba(255, 255, 255, 0.3)');
-    bgCircle.setAttribute('stroke-width', '2.5');
+    bgCircle.setAttribute('stroke-width', '3');
 
     // Progress circle
     const progressCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    progressCircle.setAttribute('cx', '16');
-    progressCircle.setAttribute('cy', '16');
-    progressCircle.setAttribute('r', '13');
+    progressCircle.setAttribute('cx', '22');
+    progressCircle.setAttribute('cy', '22');
+    progressCircle.setAttribute('r', '19');
     progressCircle.setAttribute('fill', 'none');
     progressCircle.setAttribute('stroke', 'white');
-    progressCircle.setAttribute('stroke-width', '2.5');
+    progressCircle.setAttribute('stroke-width', '3');
     progressCircle.setAttribute('stroke-linecap', 'round');
 
-    const circumference = 2 * Math.PI * 13;
+    const circumference = 2 * Math.PI * 19;
     progressCircle.style.strokeDasharray = `${circumference}`;
     progressCircle.style.strokeDashoffset = `${circumference}`;
     progressCircle.style.transition = 'stroke-dashoffset 0.3s ease';
@@ -691,14 +691,14 @@ export class WebReelRecorder {
     svg.appendChild(bgCircle);
     svg.appendChild(progressCircle);
 
-    // Percentage text (smaller, inside the circle)
+    // Percentage text (inside the circle)
     const percentText = document.createElement('div');
     percentText.style.cssText = `
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 700;
       color: white;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;

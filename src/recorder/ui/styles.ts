@@ -8,7 +8,6 @@ const STYLES = `
   display: flex;
   justify-content: center;
   align-items: center;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   user-select: none;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -23,30 +22,8 @@ const STYLES = `
   overflow: visible;
 }
 
-.web-reel-entry-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.web-reel-entry-button:hover::before {
-  opacity: 1;
-}
-
-.web-reel-entry-button:hover {
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5),
-              0 4px 8px rgba(0, 0, 0, 0.15);
-  transform: translateY(-2px) scale(1.05);
-}
-
 .web-reel-entry-button:active {
-  transform: translateY(0) scale(0.98);
+  transform: scale(0.98);
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4),
               0 1px 2px rgba(0, 0, 0, 0.1);
 }
@@ -55,71 +32,30 @@ const STYLES = `
 .web-reel-entry-button--bottom-right {
   right: 20px;
   bottom: 20px;
-  animation: slideInRight 0.5s ease-out;
-}
-
-@keyframes slideInRight {
-  from {
-    right: -80px;
-    opacity: 0;
-  }
-  to {
-    right: 20px;
-    opacity: 1;
-  }
 }
 
 .web-reel-entry-button--bottom-left {
   left: 20px;
   bottom: 20px;
-  animation: slideInLeft 0.5s ease-out;
-}
-
-@keyframes slideInLeft {
-  from {
-    left: -80px;
-    opacity: 0;
-  }
-  to {
-    left: 20px;
-    opacity: 1;
-  }
 }
 
 .web-reel-entry-button--top-right {
   right: 20px;
   top: 80px;
-  animation: slideInRight 0.5s ease-out;
 }
 
 .web-reel-entry-button--top-left {
   left: 20px;
   top: 80px;
-  animation: slideInLeft 0.5s ease-out;
 }
 
 /* SVG icon */
-.web-reel-entry-button svg {
+.web-reel-entry-button>svg {
   width: 24px;
   height: 24px;
   position: relative;
   z-index: 1;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
-  transition: transform 0.3s ease;
-}
-
-.web-reel-entry-button:hover svg {
-  transform: translateY(2px);
-  animation: bounce 0.6s ease;
-}
-
-@keyframes bounce {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(4px);
-  }
 }
 
 /* Tooltip */
@@ -158,8 +94,7 @@ const STYLES = `
 
 .web-reel-entry-button:hover .web-reel-entry-button-tooltip {
   opacity: 1;
-  transform: translateY(-50%) scale(1);
-  transition-delay: 0.6s;
+  transform: translateY(-50%);
 }
 
 /* Tooltip arrow */
@@ -187,36 +122,6 @@ const STYLES = `
   border-color: transparent rgba(0, 0, 0, 0.92) transparent transparent;
 }
 
-/* Pulse animation for attention */
-.web-reel-entry-button::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 100%;
-  height: 100%;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(1);
-  animation: pulse 2s ease-out infinite;
-}
-
-@keyframes pulse {
-  0% {
-    opacity: 0.6;
-    transform: translate(-50%, -50%) scale(1);
-  }
-  70% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(1.4);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(1);
-  }
-}
-
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .web-reel-entry-button {
@@ -225,7 +130,7 @@ const STYLES = `
     font-size: 18px;
   }
   
-  .web-reel-entry-button svg {
+  .web-reel-entry-button>svg {
     width: 20px;
     height: 20px;
   }
