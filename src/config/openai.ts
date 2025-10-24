@@ -21,7 +21,7 @@ const STORAGE_KEY = 'web-reel-openai-config';
  */
 export function getEnvConfig(): Partial<OpenAIConfig> {
   return {
-    apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
+    apiKey: process.env.OPENAI_API_KEY,
     apiBase: process.env.NEXT_PUBLIC_OPENAI_API_BASE || 'https://api.openai.com/v1',
     model: process.env.NEXT_PUBLIC_OPENAI_MODEL || 'gpt-4o-mini',
   };
@@ -70,6 +70,7 @@ export function clearRuntimeConfig(): void {
  */
 export function getOpenAIConfig(): OpenAIConfig {
   const envConfig = getEnvConfig();
+  console.log('envConfig!!', envConfig);
   const runtimeConfig = getRuntimeConfig();
 
   const merged = {

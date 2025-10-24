@@ -22,9 +22,9 @@ const STORAGE_KEY = 'web-reel-jira-config';
  */
 export function getEnvConfig(): Partial<JiraConfig> {
   return {
-    apiKey: process.env.NEXT_PUBLIC_JIRA_API_KEY || '',
-    domain: process.env.NEXT_PUBLIC_JIRA_DOMAIN || 'sedna-tech.atlassian.net',
-    userEmail: process.env.NEXT_PUBLIC_JIRA_USER_EMAIL || 'wei.qi.nick@gmail.com',
+    apiKey: process.env.JIRA_API_KEY,
+    userEmail: process.env.JIRA_USER_EMAIL,
+    domain: process.env.NEXT_PUBLIC_JIRA_DOMAIN || 'web-reel.atlassian.net',
     projectKey: process.env.NEXT_PUBLIC_JIRA_PROJECT_KEY || 'WR',
   };
 }
