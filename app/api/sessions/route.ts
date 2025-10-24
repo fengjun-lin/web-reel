@@ -4,6 +4,24 @@ import { createSession, listSessions } from '@/services/session';
 import type { CreateSessionResponse, ListSessionsResponse } from '@/types/session';
 
 /**
+ * CORS headers for cross-origin requests
+ */
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Max-Age': '86400',
+};
+
+/**
+ * OPTIONS /api/sessions
+ * Handle preflight CORS requests
+ */
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
+/**
  * POST /api/sessions
  * Create a new session with uploaded file
  */
@@ -23,7 +41,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: 'File is required',
         },
-        { status: 400 },
+        { status: 400, headers: corsHeaders },
       );
     }
 
@@ -34,7 +52,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: 'File must be a .zip file',
         },
-        { status: 400 },
+        { status: 400, headers: corsHeaders },
       );
     }
 
@@ -50,7 +68,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: `File size exceeds maximum allowed size of 20MB (got ${(buffer.length / 1024 / 1024).toFixed(2)}MB)`,
         },
-        { status: 400 },
+        { status: 400, headers: corsHeaders },
       );
     }
 
@@ -73,7 +91,7 @@ export async function POST(request: NextRequest) {
           device_id: session.device_id,
         },
       },
-      { status: 201 },
+      { status: 201, headers: corsHeaders },
     );
   } catch (error) {
     console.error('[Sessions API] Create error:', error);
@@ -82,7 +100,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to create session',
       },
-      { status: 500 },
+      { status: 500, headers: corsHeaders },
     );
   }
 }
@@ -115,7 +133,7 @@ export async function GET(request: NextRequest) {
           success: false,
           error: 'Invalid limit parameter (must be between 1 and 100)',
         },
-        { status: 400 },
+        { status: 400, headers: corsHeaders },
       );
     }
 
@@ -125,7 +143,7 @@ export async function GET(request: NextRequest) {
           success: false,
           error: 'Invalid offset parameter (must be >= 0)',
         },
-        { status: 400 },
+        { status: 400, headers: corsHeaders },
       );
     }
 
@@ -138,13 +156,16 @@ export async function GET(request: NextRequest) {
       device_id,
     });
 
-    return NextResponse.json<ListSessionsResponse>({
-      success: true,
-      sessions: result.sessions,
-      total: result.total,
-      limit,
-      offset,
-    });
+    return NextResponse.json<ListSessionsResponse>(
+      {
+        success: true,
+        sessions: result.sessions,
+        total: result.total,
+        limit,
+        offset,
+      },
+      { headers: corsHeaders },
+    );
   } catch (error) {
     console.error('[Sessions API] List error:', error);
     return NextResponse.json<ListSessionsResponse>(
@@ -152,7 +173,7 @@ export async function GET(request: NextRequest) {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to list sessions',
       },
-      { status: 500 },
+      { status: 500, headers: corsHeaders },
     );
   }
 }
