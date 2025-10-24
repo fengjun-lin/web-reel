@@ -1,44 +1,43 @@
 'use client';
 
-import { InboxOutlined, UploadOutlined } from '@ant-design/icons';
-import { Alert, Button, Card, Divider, Empty, Input, Space, Typography, Upload, message } from 'antd';
-import type { UploadProps } from 'antd';
-import JSZip from 'jszip';
+import { DeleteOutlined, EyeOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { Alert, App, Button, Card, Space, Table, Tag, Typography } from 'antd';
+import type { TableColumnsType, TableProps } from 'antd';
+import dayjs from 'dayjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import UploadFlagSwitch from '@/components/UploadFlagSwitch';
-import type { RecordCollection } from '@/recorder';
+import type { SessionMetadata } from '@/types/session';
 
-const { Title, Text } = Typography;
-const { Dragger } = Upload;
-
-interface SessionInfo {
-  sessionId: string;
-  eventCount: number;
-  networkCount: number;
-  startTime: number;
-  size: number;
-}
+const { Title, Text, Link } = Typography;
 
 export default function SessionsPage() {
   const router = useRouter();
-  const [sessions, setSessions] = useState<SessionInfo[]>([]);
+  const { modal, message } = App.useApp();
+  const [sessions, setSessions] = useState<SessionMetadata[]>([]);
   const [loading, setLoading] = useState(false);
-  const [deviceId, setLdap] = useState<string>('');
-  const [appId] = useState<number>(1); // Default to appId 1
+  const [deleting, setDeleting] = useState<number | null>(null);
 
-  // Load sessions from IndexedDB or localStorage
+  // Jira configuration from environment variables
+  const jiraDomain = process.env.NEXT_PUBLIC_JIRA_DOMAIN || 'web-reel.atlassian.net';
+
+  // Load sessions from database
   useEffect(() => {
     loadSessions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadSessions = async () => {
     setLoading(true);
     try {
-      // TODO: Load from IndexedDB when available
-      // For now, just show empty state
-      setSessions([]);
+      const response = await fetch('/api/sessions?limit=100');
+      const data = await response.json();
+
+      if (data.success && data.sessions) {
+        setSessions(data.sessions);
+      } else {
+        throw new Error(data.error || 'Failed to load sessions');
+      }
     } catch (error) {
       console.error('Failed to load sessions:', error);
       message.error('Failed to load sessions');
@@ -47,188 +46,174 @@ export default function SessionsPage() {
     }
   };
 
-  const handleUpload: UploadProps['beforeUpload'] = async (file) => {
-    try {
-      setLoading(true);
+  const handleView = (id: number) => {
+    router.push(`/replayer/${id}`);
+  };
 
-      // Check file type
-      if (!file.name.endsWith('.json') && !file.name.endsWith('.txt') && !file.name.endsWith('.zip')) {
-        message.error('Please upload a JSON, TXT, or ZIP file');
-        setLoading(false);
-        return false;
-      }
+  const handleDelete = (id: number) => {
+    modal.confirm({
+      title: 'Delete Session',
+      icon: <ExclamationCircleOutlined />,
+      content: `Are you sure you want to delete session #${id}? This action cannot be undone.`,
+      okText: 'Delete',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      okButtonProps: {
+        style: { outline: 'none' },
+      },
+      cancelButtonProps: {
+        style: { outline: 'none' },
+      },
+      onOk: async () => {
+        setDeleting(id);
+        try {
+          const response = await fetch(`/api/sessions/${id}`, {
+            method: 'DELETE',
+          });
+          const data = await response.json();
 
-      let collection: RecordCollection;
-
-      if (file.name.endsWith('.zip')) {
-        // Handle ZIP file
-        const zip = await JSZip.loadAsync(file);
-        const files = Object.keys(zip.files);
-
-        if (files.length === 0) {
-          message.error('ZIP file is empty');
-          setLoading(false);
-          return false;
-        }
-
-        // Load all session files
-        collection = {};
-        for (const fileName of files) {
-          if (fileName.endsWith('.json')) {
-            const zipFile = zip.files[fileName];
-            if (!zipFile) continue;
-
-            const content = await zipFile.async('string');
-            const sessionData = JSON.parse(content);
-
-            // Extract session ID from filename (e.g., session-1234567890.json)
-            const match = fileName.match(/session-(\d+)\.json/);
-            if (match && match[1]) {
-              collection[match[1]] = sessionData;
-            }
+          if (data.success) {
+            message.success('Session deleted successfully');
+            // Remove from local state
+            setSessions((prev) => prev.filter((s) => s.id !== id));
+          } else {
+            throw new Error(data.error || 'Failed to delete session');
           }
+        } catch (error) {
+          console.error('Failed to delete session:', error);
+          message.error('Failed to delete session');
+        } finally {
+          setDeleting(null);
         }
-      } else {
-        // Handle JSON/TXT file
-        const reader = new FileReader();
-        const content = await new Promise<string>((resolve, reject) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsText(file);
-        });
+      },
+    });
+  };
 
-        collection = JSON.parse(content);
-      }
+  // Extract unique platforms for filtering
+  const platformFilters = Array.from(
+    new Set(sessions.map((s) => s.platform).filter((p): p is string => p !== null)),
+  ).map((platform) => ({
+    text: platform,
+    value: platform,
+  }));
 
-      // Parse sessions
-      const sessionInfos: SessionInfo[] = Object.keys(collection).map((sessionId) => {
-        const session = collection[sessionId];
-        if (!session) {
-          return {
-            sessionId,
-            eventCount: 0,
-            networkCount: 0,
-            startTime: parseInt(sessionId, 10),
-            size: 0,
-          };
+  const columns: TableColumnsType<SessionMetadata> = [
+    {
+      title: 'ID',
+      dataIndex: 'id',
+      key: 'id',
+      width: 80,
+      sorter: (a, b) => a.id - b.id,
+    },
+    {
+      title: 'Jira',
+      dataIndex: 'jira_id',
+      key: 'jira_id',
+      width: 150,
+      render: (jira_id: string | null) => {
+        if (!jira_id) {
+          return <Text type="secondary">-</Text>;
         }
+        const jiraUrl = `https://${jiraDomain}/browse/${jira_id}`;
+        return (
+          <Link href={jiraUrl} target="_blank" rel="noopener noreferrer">
+            {jira_id}
+          </Link>
+        );
+      },
+    },
+    {
+      title: 'Platform',
+      dataIndex: 'platform',
+      key: 'platform',
+      width: 120,
+      filters: platformFilters,
+      onFilter: (value, record) => record.platform === value,
+      render: (platform: string | null) => {
+        if (!platform) {
+          return <Text type="secondary">-</Text>;
+        }
+        return <Tag color="blue">{platform}</Tag>;
+      },
+    },
+    {
+      title: 'Device ID',
+      dataIndex: 'device_id',
+      key: 'device_id',
+      width: 150,
+      render: (device_id: string | null) => device_id || <Text type="secondary">-</Text>,
+    },
+    {
+      title: 'Created At',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      width: 180,
+      sorter: (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+      defaultSortOrder: 'descend',
+      render: (created_at: Date) => dayjs(created_at).format('YYYY-MM-DD HH:mm:ss'),
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      width: 150,
+      fixed: 'right',
+      render: (_, record) => (
+        <Space size="small">
+          <Button type="primary" size="small" icon={<EyeOutlined />} onClick={() => handleView(record.id)}>
+            View
+          </Button>
+          <Button
+            danger
+            size="small"
+            icon={<DeleteOutlined />}
+            onClick={(e) => {
+              e.currentTarget.blur();
+              handleDelete(record.id);
+            }}
+            loading={deleting === record.id}
+            style={{ outline: 'none' }}
+          >
+            Delete
+          </Button>
+        </Space>
+      ),
+    },
+  ];
 
-        return {
-          sessionId,
-          eventCount: session.eventData?.length || 0,
-          networkCount: session.responseData?.length || 0,
-          startTime: parseInt(sessionId, 10),
-          size: JSON.stringify(session).length,
-        };
-      });
-
-      // Store in sessionStorage for replay
-      sessionStorage.setItem('uploadedSessions', JSON.stringify(collection));
-
-      setSessions(sessionInfos);
-      message.success(`Loaded ${sessionInfos.length} session(s)`);
-    } catch (error) {
-      console.error('Failed to parse file:', error);
-      message.error(`Failed to parse file: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setLoading(false);
-    }
-
-    return false;
-  };
-
-  const handleViewSession = (sessionId: string) => {
-    router.push(`/replayer/${sessionId}`);
-  };
-
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleString();
-  };
-
-  const formatSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
-    return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+  const handleTableChange: TableProps<SessionMetadata>['onChange'] = (pagination, filters, sorter) => {
+    // Table change handler for any future custom logic
+    console.log('Table params:', pagination, filters, sorter);
   };
 
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <div>
         <Title level={2}>Session Management</Title>
-        <Text type="secondary">Upload recorded sessions to view and replay user interactions</Text>
+        <Text type="secondary">View and manage recorded sessions from the database</Text>
       </div>
 
       <Alert
         message="Session Recording"
-        description="To record sessions, integrate the Web-Reel Recorder SDK into your application. Recorded sessions can be exported and uploaded here for replay."
+        description="Sessions are automatically uploaded to the database when recorded. Use the table below to view, replay, and manage sessions."
         type="info"
         showIcon
       />
 
-      <Card title="Upload Settings">
-        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-          <div>
-            <Text strong>User Device ID: </Text>
-            <Input
-              placeholder="Enter your Device ID (e.g., john.doe)"
-              value={deviceId}
-              onChange={(e) => setLdap(e.target.value)}
-              style={{ width: 300, marginLeft: 8 }}
-            />
-          </div>
-          <UploadFlagSwitch appId={appId} deviceId={deviceId} />
-        </Space>
-      </Card>
-
-      <Divider />
-
-      <Card title="Upload Sessions">
-        <Dragger beforeUpload={handleUpload} accept=".json,.txt,.zip" showUploadList={false} disabled={loading}>
-          <p className="ant-upload-drag-icon">
-            <InboxOutlined />
-          </p>
-          <p className="ant-upload-text">Click or drag file to this area to upload</p>
-          <p className="ant-upload-hint">
-            Support for JSON, TXT, or ZIP files containing session data. Files are processed locally and not uploaded to
-            any server.
-          </p>
-        </Dragger>
-      </Card>
-
-      <Card title="Available Sessions">
-        {sessions.length === 0 ? (
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="No sessions available. Upload a session file to get started."
-          >
-            <Upload beforeUpload={handleUpload} accept=".json,.txt,.zip" showUploadList={false}>
-              <Button type="primary" icon={<UploadOutlined />}>
-                Upload Now
-              </Button>
-            </Upload>
-          </Empty>
-        ) : (
-          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-            {sessions.map((session) => (
-              <Card key={session.sessionId} size="small" hoverable onClick={() => handleViewSession(session.sessionId)}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Space direction="vertical" size={4}>
-                    <Text strong>Session ID: {session.sessionId}</Text>
-                    <Text type="secondary">Start Time: {formatDate(session.startTime)}</Text>
-                    <Space size="large">
-                      <Text type="secondary">Events: {session.eventCount}</Text>
-                      <Text type="secondary">Network: {session.networkCount}</Text>
-                      <Text type="secondary">Size: {formatSize(session.size)}</Text>
-                    </Space>
-                  </Space>
-                  <Button type="primary" onClick={() => handleViewSession(session.sessionId)}>
-                    View Replay
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </Space>
-        )}
+      <Card title="Sessions">
+        <Table<SessionMetadata>
+          columns={columns}
+          dataSource={sessions}
+          rowKey="id"
+          loading={loading}
+          onChange={handleTableChange}
+          pagination={{
+            pageSize: 10,
+            hideOnSinglePage: sessions.length <= 10,
+            showTotal: (total) => `Total ${total} session${total !== 1 ? 's' : ''}`,
+            showSizeChanger: false,
+          }}
+          scroll={{ x: 1000 }}
+        />
       </Card>
     </Space>
   );
