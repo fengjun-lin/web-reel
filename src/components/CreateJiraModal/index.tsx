@@ -3,12 +3,17 @@
  * Allows users to create Jira tickets with session data context
  */
 
-import { CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
-import { Modal, Form, Input, Button, message, Space, Spin, Typography } from 'antd';
+import { CheckCircleOutlined, ExclamationCircleOutlined, RobotOutlined } from '@ant-design/icons';
+import { Modal, Form, Input, Button, message, Space, Spin, Typography, Tooltip } from 'antd';
 import { useEffect, useState } from 'react';
 
-import { checkEnvConfig, getRuntimeConfig } from '@/config/jira';
+import { checkEnvConfig as checkJiraEnvConfig, getRuntimeConfig as getJiraRuntimeConfig } from '@/config/jira';
+import { checkEnvConfig as checkOpenAIEnvConfig, getRuntimeConfig as getOpenAIRuntimeConfig } from '@/config/openai';
 import { createJiraTicket } from '@/services/jira';
+import { chatCompletion } from '@/services/openai';
+import type { LogInfo } from '@/types';
+import type { HarEntry } from '@/types/har';
+import { prepareAnalysisData, buildJiraCompactPrompt, type AnalysisData } from '@/utils/analysisHelper';
 
 const { TextArea } = Input;
 const { Text, Link } = Typography;
@@ -17,11 +22,20 @@ interface CreateJiraModalProps {
   visible: boolean;
   onClose: () => void;
   sessionId?: string;
+  logs?: LogInfo[];
+  requests?: HarEntry[];
 }
 
-export default function CreateJiraModal({ visible, onClose, sessionId }: CreateJiraModalProps) {
+export default function CreateJiraModal({
+  visible,
+  onClose,
+  sessionId,
+  logs = [],
+  requests = [],
+}: CreateJiraModalProps) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [generatingAI, setGeneratingAI] = useState(false);
   const [createdTicket, setCreatedTicket] = useState<{
     issueKey: string;
     issueUrl: string;
@@ -33,6 +47,7 @@ export default function CreateJiraModal({ visible, onClose, sessionId }: CreateJ
     isConfigured: false,
     loading: true,
   });
+  const [openAIConfigured, setOpenAIConfigured] = useState(false);
 
   // Check configuration status on mount and when modal opens
   useEffect(() => {
@@ -44,22 +59,97 @@ export default function CreateJiraModal({ visible, onClose, sessionId }: CreateJ
   const checkConfig = async () => {
     setConfigStatus({ isConfigured: false, loading: true });
 
-    // Check runtime config first (localStorage)
-    const runtimeConfig = getRuntimeConfig();
-    if (runtimeConfig?.apiKey && runtimeConfig?.userEmail) {
+    // Check Jira runtime config first (localStorage)
+    const jiraRuntimeConfig = getJiraRuntimeConfig();
+    if (jiraRuntimeConfig?.apiKey && jiraRuntimeConfig?.userEmail) {
       setConfigStatus({ isConfigured: true, loading: false });
-      return;
+    } else {
+      // Check Jira environment config via API
+      const jiraEnvConfig = await checkJiraEnvConfig();
+      setConfigStatus({
+        isConfigured: jiraEnvConfig.hasApiKey && jiraEnvConfig.hasUserEmail,
+        loading: false,
+      });
     }
 
-    // Check environment config via API
-    const envConfig = await checkEnvConfig();
-    setConfigStatus({
-      isConfigured: envConfig.hasApiKey && envConfig.hasUserEmail,
-      loading: false,
-    });
+    // Check OpenAI config for AI generation feature
+    const openAIRuntimeConfig = getOpenAIRuntimeConfig();
+    if (openAIRuntimeConfig?.apiKey) {
+      setOpenAIConfigured(true);
+    } else {
+      const openAIEnvConfig = await checkOpenAIEnvConfig();
+      setOpenAIConfigured(openAIEnvConfig.hasApiKey);
+    }
   };
 
   const jiraConfigured = configStatus.isConfigured;
+
+  // AI Generation: Use OpenAI to generate smart description
+  const handleAIGenerate = async () => {
+    if (!logs.length && !requests.length) {
+      message.warning('No session data available for AI analysis');
+      return;
+    }
+
+    if (!openAIConfigured) {
+      message.error('OpenAI is not configured. Please configure it in Settings.');
+      return;
+    }
+
+    setGeneratingAI(true);
+
+    try {
+      const data = prepareAnalysisData(logs, requests, {
+        logLimit: 100,
+        requestLimit: 50,
+        includeStackTrace: false, // Reduce token usage
+      });
+
+      const prompt = buildJiraCompactPrompt(data);
+
+      // Call OpenAI API
+      const response = await chatCompletion({
+        messages: [
+          { role: 'system', content: prompt.system },
+          { role: 'user', content: prompt.user },
+        ],
+        temperature: 0.3,
+        maxTokens: 1500,
+      });
+
+      // Parse AI response
+      let aiResult;
+      try {
+        // Try to parse as JSON
+        const jsonMatch = response.content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          aiResult = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error('No JSON found in response');
+        }
+      } catch {
+        message.error('Failed to parse AI response');
+        setGeneratingAI(false);
+        return;
+      }
+
+      // Format AI result into Jira description
+      const aiDescription = formatAIResultToDescription(aiResult, data, sessionId);
+      const aiSummary = aiResult.summary || `Bug Report: Session ${sessionId || 'Unknown'}`;
+
+      form.setFieldsValue({
+        summary: aiSummary.slice(0, 255),
+        description: aiDescription,
+      });
+
+      message.success('AI-generated description created successfully!');
+    } catch (error) {
+      console.error('AI generation failed:', error);
+      message.error('Failed to generate AI description. Please try again.');
+    } finally {
+      setGeneratingAI(false);
+    }
+  };
 
   // Handle form submission
   const handleSubmit = async () => {
@@ -100,25 +190,19 @@ export default function CreateJiraModal({ visible, onClose, sessionId }: CreateJ
   // Initialize form with default values
   const initialValues = {
     summary: `Bug Report: Session ${sessionId || 'Unknown'}`,
-    description: `This bug was found during session replay analysis.
+    description: `## Environment
 
-Session ID: ${sessionId || 'Unknown'}
+## Precondition
 
-Steps to Reproduce:
-1. [Add steps here]
-2. [Add more steps]
+## Steps
 
-Expected Behavior:
-[Describe what should happen]
+## Expected result
 
-Actual Behavior:
-[Describe what actually happens]
-
-Additional Information:
-- Browser: [Browser name and version]
-- Environment: [Development/Staging/Production]
-- Timestamp: ${new Date().toISOString()}`,
+## Actual result
+`,
   };
+
+  const hasSessionData = logs.length > 0 || requests.length > 0;
 
   return (
     <Modal
@@ -214,20 +298,133 @@ Additional Information:
 
           <Form.Item
             name="description"
-            label="Description"
+            label={
+              <Space>
+                <span>Description</span>
+                {hasSessionData && openAIConfigured && (
+                  <Tooltip title="Use AI to generate intelligent description based on session data">
+                    <Button
+                      type="link"
+                      size="small"
+                      icon={<RobotOutlined />}
+                      onClick={handleAIGenerate}
+                      loading={generatingAI}
+                      style={{ padding: '0 4px' }}
+                    >
+                      AI Generate
+                    </Button>
+                  </Tooltip>
+                )}
+              </Space>
+            }
             rules={[
               { required: true, message: 'Please enter a description' },
               { min: 10, message: 'Description must be at least 10 characters' },
             ]}
           >
-            <TextArea rows={12} placeholder="Detailed description of the issue including steps to reproduce" />
+            <TextArea
+              rows={12}
+              placeholder="Detailed description of the issue including steps to reproduce"
+              disabled={generatingAI}
+            />
           </Form.Item>
 
-          <Text type="secondary" style={{ fontSize: '12px' }}>
-            This will create a Bug ticket in the WR project. You can edit the fields above before creating the ticket.
-          </Text>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            {hasSessionData && openAIConfigured && (
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                💡 Tip: Click &quot;AI Generate&quot; to auto-fill the description with intelligent analysis.
+              </Text>
+            )}
+            <Text type="secondary" style={{ fontSize: '12px' }}>
+              This will create a Bug ticket in the WR project. You can edit the fields above before creating the ticket.
+            </Text>
+          </Space>
         </Form>
       )}
     </Modal>
   );
+}
+
+/* ==================== Helper Functions ==================== */
+
+/**
+ * Format AI result into Jira description (with ## headers)
+ */
+function formatAIResultToDescription(
+  aiResult: {
+    summary?: string;
+    type?: string;
+    evidence?: string[];
+    fix?: string;
+    labels?: string[];
+  },
+  data: AnalysisData,
+  sessionId?: string,
+): string {
+  const sections: string[] = [];
+
+  // Environment Section
+  sections.push(`## Environment`);
+  sections.push(`Session ID: ${sessionId || 'Unknown'}`);
+  sections.push(`Issue Type: ${aiResult.type || 'Unknown'}`);
+  if (aiResult.labels && aiResult.labels.length > 0) {
+    sections.push(`Labels: ${aiResult.labels.join(', ')}`);
+  }
+  sections.push(`Timestamp: ${new Date(data.sessionStartTime || Date.now()).toISOString()}`);
+  sections.push('');
+
+  // Precondition Section
+  sections.push(`## Precondition`);
+  sections.push(`${aiResult.summary || 'Issue detected in session'}`);
+  sections.push(`Console Errors: ${data.summary.errorCount} | Network Errors: ${data.summary.networkErrorCount}`);
+  sections.push('');
+
+  // Steps Section
+  sections.push(`## Steps`);
+  if (aiResult.evidence && aiResult.evidence.length > 0) {
+    aiResult.evidence.forEach((item, i) => {
+      sections.push(`${i + 1}. ${item}`);
+    });
+  } else if (data.errors.length > 0 || data.networkErrors.length > 0) {
+    let stepNum = 1;
+    if (data.errors.length > 0 && data.errors[0]) {
+      sections.push(`${stepNum++}. ${data.errors[0].message}`);
+    }
+    if (data.networkErrors.length > 0 && data.networkErrors[0]) {
+      const req = data.networkErrors[0];
+      sections.push(`${stepNum}. ${req.method} ${req.url} returned ${req.status}`);
+    }
+  }
+  sections.push('');
+
+  // Expected Result Section
+  sections.push(`## Expected result`);
+  if (aiResult.fix) {
+    sections.push(aiResult.fix);
+  } else {
+    sections.push('No errors or exceptions');
+  }
+  sections.push('');
+
+  // Actual Result Section
+  sections.push(`## Actual result`);
+  if (aiResult.summary) {
+    sections.push(aiResult.summary);
+  }
+
+  // Add critical error details
+  if (data.errors.length > 0 && data.errors[0]) {
+    sections.push('');
+    sections.push(`Error: ${data.errors[0].message}`);
+  }
+
+  if (data.networkErrors.length > 0 && data.networkErrors[0]) {
+    const topNetworkError = data.networkErrors[0];
+    sections.push('');
+    sections.push(
+      `${topNetworkError.method} ${topNetworkError.url} → ${topNetworkError.status} ${topNetworkError.statusText}`,
+    );
+  }
+
+  return sections.join('\n');
 }

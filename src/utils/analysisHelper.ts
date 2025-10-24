@@ -366,6 +366,9 @@ export function buildAnalysisPrompt(data: AnalysisData): string {
   // Analysis request
   sections.push(`\n## Analysis Request
 
+You are an **AI frontend debugging assistant**.
+Analyze this session to determine **likely root causes** of the most recent issues.
+
 **Important Context**: 
 - Errors and network failures are sorted by **most recent first** (newest → oldest)
 - The **most recent errors** (marked with ⚠️) are likely the **most relevant** to the user's issue
@@ -413,4 +416,82 @@ Please analyze this session data and provide:
 Format your response in clear markdown with sections. **IMPORTANT: When referencing specific errors, always use clickable timestamp links in the format [HH:MM:SS](#seek:timestamp) 🎯** for clarity and to allow users to jump to that exact moment in the replay. Focus on being practical and actionable for developers.`);
 
   return sections.join('\n');
+}
+
+/**
+ * Compact prompt for Jira integration (Ultra-compact JSON output)
+ * Optimized for direct insertion into Jira fields with strict length limits
+ */
+export function buildJiraCompactPrompt(data: AnalysisData): {
+  system: string;
+  user: string;
+  schema: object;
+} {
+  const system = `
+You are a frontend debugging assistant. Return a compact JSON for Jira with strict length caps.
+Do not speculate. Prefer the newest error/request. Keep text short and actionable.
+  `.trim();
+
+  const newestError = data.errors[0];
+  const newestNetworkError = data.networkErrors[0];
+
+  const errorSnippet = newestError ? truncateText(newestError.message, 160) : 'none';
+  const requestSnippet = newestNetworkError
+    ? `[${newestNetworkError.method}] ${extractPath(newestNetworkError.url)} → ${newestNetworkError.status} ${newestNetworkError.statusText}`.slice(
+        0,
+        160,
+      )
+    : 'none';
+
+  const user = `
+Session evidence (newest-first).
+Use only these two items as primary citations:
+- Error: ${errorSnippet}
+- Request: ${requestSnippet}
+
+Constraints:
+- Total JSON length ≤ 900 characters.
+- Each field ≤ 160 chars, each evidence item ≤ 160 chars.
+- Types: NPE | Network | Script | Render | Data | Other.
+
+Return JSON strictly matching the schema.
+  `.trim();
+
+  const schema = {
+    type: 'object',
+    properties: {
+      summary: { type: 'string', description: 'One-line summary (≤160 chars), newest issue focused.' },
+      type: { type: 'string', enum: ['NPE', 'Network', 'Script', 'Render', 'Data', 'Other'] },
+      evidence: {
+        type: 'array',
+        minItems: 1,
+        maxItems: 2,
+        items: { type: 'string', description: '≤160 chars; cite newest error/request succinctly.' },
+      },
+      fix: { type: 'string', description: 'One actionable fix ≤160 chars.' },
+      labels: {
+        type: 'array',
+        minItems: 1,
+        maxItems: 4,
+        items: { type: 'string', description: 'Short label (e.g., bug, frontend, api-error)' },
+      },
+    },
+    required: ['summary', 'type', 'evidence', 'fix', 'labels'],
+    additionalProperties: false,
+  };
+
+  return { system, user, schema };
+}
+
+/**
+ * Extract path from URL to avoid overly long URLs in prompts
+ */
+function extractPath(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return parsed.pathname + (parsed.search ? `?${parsed.search.slice(0, 30)}` : '');
+  } catch {
+    // If URL parsing fails, return truncated original
+    return url.slice(0, 80);
+  }
 }

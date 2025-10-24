@@ -608,7 +608,13 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
       </Modal>
 
       {/* Jira Modal */}
-      <CreateJiraModal visible={showJiraModal} onClose={() => setShowJiraModal(false)} sessionId={id} />
+      <CreateJiraModal
+        visible={showJiraModal}
+        onClose={() => setShowJiraModal(false)}
+        sessionId={id}
+        logs={consoleLogs}
+        requests={sessionData?.responseData || []}
+      />
     </Space>
   );
 }
