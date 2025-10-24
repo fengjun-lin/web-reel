@@ -4,6 +4,8 @@ import type { eventWithTime } from 'rrweb/typings/types';
 import { DB_INDEX_KEY, DB_TABLE_NAME } from './constants/db';
 import { LOCAL_UPLOADING_FLAG, UNKNOWN_DEVICE_ID } from './constants/session';
 import { exportToFile } from './export';
+import type { RecordCollection } from './export';
+import { importFromFile } from './import';
 import { NetworkInterceptor } from './interceptors';
 import { getUploadLogFlag, setUploadLogFlag, uploadEnvStat, uploadPvStat, uploadSessionLog } from './services/api';
 import { getApiPrefix } from './services/http';
@@ -328,9 +330,11 @@ export class WebReelRecorder {
   }
 
   /**
-   * Export all session data as JSON file
+   * Export all session data as ZIP or JSON file
+   * @param clearAfterExport - Whether to clear data after export (default: true)
+   * @param format - Export format ('zip' or 'json'), defaults to 'zip'
    */
-  public async exportLog(clearAfterExport: boolean = true): Promise<void> {
+  public async exportLog(clearAfterExport: boolean = true, format: 'zip' | 'json' = 'zip'): Promise<void> {
     console.log('[Web-Reel Export] Starting export...');
 
     const eventDataMap = await this.db.getByIndexKey(DB_TABLE_NAME.RENDER_EVENT, DB_INDEX_KEY);
@@ -362,7 +366,7 @@ export class WebReelRecorder {
       return;
     }
 
-    await exportToFile(limitedEventDataMap, limitedResponseDataMap);
+    await exportToFile(limitedEventDataMap, limitedResponseDataMap, format);
 
     // Clear exported data after successful export
     if (clearAfterExport) {
@@ -374,6 +378,65 @@ export class WebReelRecorder {
       } catch (clearError) {
         console.error('[Web-Reel Export] ❌ Failed to clear data:', clearError);
       }
+    }
+  }
+
+  /**
+   * Import session data from a ZIP or JSON file
+   * @param file - The file to import (.zip or .json)
+   * @param clearBeforeImport - Whether to clear existing data before import (default: false)
+   * @returns Promise with import status
+   */
+  public async importLog(file: File, clearBeforeImport: boolean = false): Promise<void> {
+    console.log('[Web-Reel Import] Starting import...');
+
+    try {
+      // Clear existing data if requested
+      if (clearBeforeImport) {
+        console.log('[Web-Reel Import] Clearing existing data...');
+        await this.db.clearTable(DB_TABLE_NAME.RENDER_EVENT);
+        await this.db.clearTable(DB_TABLE_NAME.RESPONSE_DATA);
+      }
+
+      // Import data from file
+      const collection: RecordCollection = await importFromFile(file);
+
+      // Save imported data to database
+      let totalEvents = 0;
+      let totalResponses = 0;
+
+      for (const sessionId of Object.keys(collection)) {
+        const { eventData, responseData } = collection[sessionId];
+
+        // Add events
+        for (const event of eventData) {
+          await this.db.add(
+            {
+              [DB_INDEX_KEY]: Number(sessionId),
+              ...event,
+            },
+            DB_TABLE_NAME.RENDER_EVENT,
+          );
+          totalEvents++;
+        }
+
+        // Add responses
+        for (const response of responseData) {
+          await this.db.add(
+            {
+              [DB_INDEX_KEY]: Number(sessionId),
+              ...response,
+            },
+            DB_TABLE_NAME.RESPONSE_DATA,
+          );
+          totalResponses++;
+        }
+      }
+
+      console.log(`[Web-Reel Import] ✅ Import completed: ${totalEvents} events, ${totalResponses} requests`);
+    } catch (error) {
+      console.error('[Web-Reel Import] ❌ Import failed:', error);
+      throw error;
     }
   }
 

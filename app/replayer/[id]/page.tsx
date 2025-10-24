@@ -3,6 +3,7 @@
 import { InboxOutlined } from '@ant-design/icons';
 import { Alert, Button, Card, Modal, Space, Tabs, Typography, Upload, message } from 'antd';
 import type { UploadProps } from 'antd';
+import JSZip from 'jszip';
 import { use, useEffect, useRef, useState } from 'react';
 import type { eventWithTime } from 'rrweb/typings/types';
 import rrwebPlayer from 'rrweb-player';
@@ -54,7 +55,7 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
       const sessionsJson = sessionStorage.getItem('uploadedSessions');
 
       if (!sessionsJson) {
-        message.error('No sessions found. Please upload a session file first.');
+        // message.error('No sessions found. Please upload a session file first.');
         setLoading(false);
         return;
       }
@@ -93,16 +94,79 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
     try {
       setLoading(true);
 
-      // Read file as text
-      const reader = new FileReader();
-      const content = await new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsText(file);
-      });
+      let collection: RecordCollection;
 
-      const collection: RecordCollection = JSON.parse(content);
-      const sessionIds = Object.keys(collection);
+      // Check file type and handle accordingly
+      if (file.name.toLowerCase().endsWith('.zip')) {
+        // Handle ZIP file
+        console.log('[Upload] Processing ZIP file:', file.name);
+        const zip = new JSZip();
+        const zipContent = await zip.loadAsync(file);
+
+        // List all files in the ZIP for debugging
+        const files = Object.keys(zipContent.files).filter((name) => !zipContent.files[name]?.dir);
+        console.log('[Upload] Files in ZIP:', files);
+
+        // Try to find the JSON file - either 'data.json' or any .json file
+        let jsonFile = zipContent.file('data.json');
+
+        if (!jsonFile) {
+          // If data.json not found, look for any .json file
+          const jsonFileName = files.find((name) => name.toLowerCase().endsWith('.json'));
+          if (jsonFileName) {
+            console.log('[Upload] data.json not found, using:', jsonFileName);
+            jsonFile = zipContent.file(jsonFileName);
+          }
+        }
+
+        if (!jsonFile) {
+          console.error('[Upload] No JSON file found in ZIP. Available files:', files);
+          message.error(`Invalid zip file: No JSON file found. Found: ${files.join(', ')}`);
+          setLoading(false);
+          return false;
+        }
+
+        console.log('[Upload] Reading JSON from ZIP...');
+        const jsonText = await jsonFile.async('string');
+        console.log('[Upload] JSON text length:', jsonText.length);
+        collection = JSON.parse(jsonText);
+        console.log('[Upload] Parsed collection, sessions:', Object.keys(collection).length);
+        console.log('[Upload] Collection keys:', Object.keys(collection));
+        console.log('[Upload] Collection structure:', collection);
+      } else {
+        // Handle JSON/TXT file
+        const reader = new FileReader();
+        const content = await new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsText(file);
+        });
+
+        collection = JSON.parse(content);
+      }
+
+      // Check if the collection is in the correct format or needs conversion
+      // Correct format: { "sessionId": { eventData: [...], responseData: [...] } }
+      // Old/test format: { eventData: [...], responseData: [...] }
+      let normalizedCollection: RecordCollection = collection;
+
+      if ('eventData' in collection && Array.isArray(collection.eventData)) {
+        // This is the old format from test page, convert it
+        console.log('[Upload] Detected old format, converting...');
+        const timestamp = String(Date.now());
+        const eventData = collection.eventData as any[];
+        const responseData = (Array.isArray(collection.responseData) ? collection.responseData : []) as HarEntry[];
+        normalizedCollection = {
+          [timestamp]: {
+            eventData,
+            responseData,
+          },
+        };
+        console.log('[Upload] Converted to new format with timestamp:', timestamp);
+      }
+
+      const sessionIds = Object.keys(normalizedCollection);
+      console.log('[Upload] Session IDs:', sessionIds);
 
       if (sessionIds.length === 0) {
         message.error('No sessions found in file');
@@ -112,6 +176,7 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
 
       // Load the most recent session
       const latestSessionId = sessionIds.sort((a, b) => parseInt(b, 10) - parseInt(a, 10))[0];
+      console.log('[Upload] Latest session ID:', latestSessionId);
 
       if (!latestSessionId) {
         message.error('No valid session ID found');
@@ -119,7 +184,10 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
         return false;
       }
 
-      const session = collection[latestSessionId];
+      const session = normalizedCollection[latestSessionId];
+      console.log('[Upload] Session data:', session);
+      console.log('[Upload] Session eventData length:', session?.eventData?.length);
+      console.log('[Upload] Session responseData length:', session?.responseData?.length);
 
       if (!session) {
         message.error('Failed to parse session data');
@@ -128,6 +196,7 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
       }
 
       const eventData = session.eventData || [];
+      console.log('[Upload] Final eventData length:', eventData.length);
 
       setSessionData({
         eventData,
@@ -383,7 +452,7 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
           {id && <Text type="secondary">Session ID: {id}</Text>}
         </div>
         <Space>
-          <Upload beforeUpload={handleUpload} accept=".json,.txt" showUploadList={false}>
+          <Upload beforeUpload={handleUpload} accept=".json,.txt,.zip" showUploadList={false}>
             <Button type="primary" icon={<InboxOutlined />} loading={loading}>
               Upload Session File
             </Button>
@@ -406,12 +475,12 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
 
       {!sessionData && !loading && (
         <Card>
-          <Dragger beforeUpload={handleUpload} accept=".json,.txt" showUploadList={false} disabled={loading}>
+          <Dragger beforeUpload={handleUpload} accept=".json,.txt,.zip" showUploadList={false} disabled={loading}>
             <p className="ant-upload-drag-icon">
               <InboxOutlined />
             </p>
             <p className="ant-upload-text">Click or drag file to upload</p>
-            <p className="ant-upload-hint">Upload a session file (JSON or TXT format) to start replay</p>
+            <p className="ant-upload-hint">Upload a session file (JSON, TXT, or ZIP format) to start replay</p>
           </Dragger>
         </Card>
       )}

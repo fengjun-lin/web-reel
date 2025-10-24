@@ -87,7 +87,8 @@ export default function RecorderTestPage() {
   const exportJSON = async () => {
     if (recorderRef.current) {
       try {
-        await recorderRef.current.exportLog(false);
+        // Export with JSON format
+        await recorderRef.current.exportLog(false, 'json');
         message.success('Exported as JSON successfully!');
       } catch {
         message.error('Export failed');
@@ -98,7 +99,8 @@ export default function RecorderTestPage() {
   const exportZIP = async () => {
     if (recorderRef.current) {
       try {
-        await recorderRef.current.exportLog(true);
+        // Export with ZIP format
+        await recorderRef.current.exportLog(true, 'zip');
         message.success('Exported as ZIP successfully!');
       } catch {
         message.error('Export failed');
@@ -124,7 +126,7 @@ export default function RecorderTestPage() {
     console.log('Test log message');
     console.info('Test info message');
     console.warn('Test warning message');
-    console.error('Test error message');
+    // console.error('Test error message');
     message.success('Test logs output to console');
   };
 

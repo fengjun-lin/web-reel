@@ -22,8 +22,18 @@ const recorder = new WebReelRecorder({
   deviceId: 'user-123',
 });
 
-// Export session data as JSON file
+// Export session data as ZIP file (default, smaller size)
 await recorder.exportLog();
+
+// Or export as JSON
+await recorder.exportLog(true, 'json');
+
+// Import session data from file
+const fileInput = document.querySelector('input[type="file"]');
+fileInput.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  await recorder.importLog(file);
+});
 ```
 
 ## 📖 Full Documentation
@@ -36,7 +46,9 @@ See [docs/usage.md](./docs/usage.md) for complete documentation.
 - ✅ Network request capture (fetch & XHR)
 - ✅ Console logs recording
 - ✅ IndexedDB storage
-- ✅ JSON export
+- ✅ **ZIP export (60-80% compression)**
+- ✅ **Import/Export sessions**
+- ✅ JSON export (legacy support)
 - ✅ SSR compatible (Next.js, Nuxt, etc.)
 - ✅ TypeScript support
 - ✅ Webpack 5 compatible

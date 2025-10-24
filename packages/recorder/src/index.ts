@@ -7,8 +7,10 @@
 export { WebReelRecorder } from './core';
 export type { RecorderConfig } from './core';
 
-// Export utilities
-export { exportToFile } from './export';
+// Export and import utilities
+export { exportToFile, exportToZip, exportToJson } from './export';
+export type { RecordCollection } from './export';
+export { importFromFile, importFromZip, importFromJson } from './import';
 
 // Network interceptor
 export { NetworkInterceptor } from './interceptors';
