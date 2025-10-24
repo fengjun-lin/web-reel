@@ -406,7 +406,10 @@ export class WebReelRecorder {
       let totalResponses = 0;
 
       for (const sessionId of Object.keys(collection)) {
-        const { eventData, responseData } = collection[sessionId];
+        const sessionData = collection[sessionId];
+        if (!sessionData) continue;
+
+        const { eventData, responseData } = sessionData;
 
         // Add events
         for (const event of eventData) {
