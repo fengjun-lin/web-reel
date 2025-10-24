@@ -49,7 +49,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               },
               {
                 key: 'replayer',
-                label: <Link href="/replayer/0">Replayer</Link>,
+                label: <Link href="/replayer">Replayer</Link>,
               },
               {
                 key: 'settings',
@@ -63,9 +63,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           />
         </Header>
 
-      <Content style={{ padding: '0 50px', marginTop: '64px', maxWidth: '1600px', width: '100%' }}>
-        <div style={{ background: '#fff', padding: 24, minHeight: 'calc(100vh - 64px - 70px)' }}>{children}</div>
-      </Content>
+        <Content style={{ padding: '0 50px', marginTop: '64px', maxWidth: '1600px', width: '100%' }}>
+          <div style={{ background: '#fff', padding: 24, minHeight: 'calc(100vh - 64px - 70px)' }}>{children}</div>
+        </Content>
 
         <Footer style={{ textAlign: 'center' }}>Web-Reel ©2025 - Session Recording & Replay Tool</Footer>
       </Layout>
