@@ -400,10 +400,10 @@ try {
 
 ## 🔗 Links
 
-- [Package README](./packages/recorder/README.md)
-- [Migration Complete](./MONOREPO_MIGRATION_COMPLETE.md)
-- [Monorepo Plan](./MONOREPO_PLAN.md)
-- [Main README](./README.md)
+- [Package README](../README.md)
+- [Publishing Guide](./publishing.md)
+- [Versioning Guide](./versioning.md)
+- [Main Project README](../../../README.md)
 
 ---
 

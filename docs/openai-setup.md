@@ -42,10 +42,9 @@ You have two ways to configure your OpenAI API key:
 Configure the API key directly in the browser:
 
 1. Open the web app
-2. Go to a replay session
-3. Click on the "🤖 AI Analysis" tab
-4. Click "Configure OpenAI API"
-5. Enter your API key and save
+2. Click **Settings** in the top menu
+3. Enter your API key and save
+4. Click "Test Connection" to verify
 
 This stores the key in your browser's `localStorage` and never sends it to any server except OpenAI.
 
@@ -79,7 +78,7 @@ This stores the key in your browser's `localStorage` and never sends it to any s
 ### Method 1: Use the UI Test Button
 
 1. Configure your API key (either method above)
-2. Go to Settings in the AI Analysis panel
+2. Go to Settings page
 3. Click "Test Connection"
 4. You should see a success message if everything is configured correctly
 

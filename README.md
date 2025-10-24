@@ -81,7 +81,7 @@ npm run typecheck
 
 ### Deploy to Vercel
 
-See detailed deployment instructions: [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md)
+See detailed deployment instructions: [docs/deployment.md](./docs/deployment.md)
 
 Quick deploy with one click:
 
@@ -165,8 +165,9 @@ await recorder.exportLog();
 
 **Documentation:**
 
-- Installation & Usage: See [HOW_TO_USE_RECORDER_PACKAGE.md](./HOW_TO_USE_RECORDER_PACKAGE.md)
-- Publishing Guide: See [packages/recorder/PUBLISH_GUIDE.md](./packages/recorder/PUBLISH_GUIDE.md)
+- Installation & Usage: See [packages/recorder/docs/usage.md](./packages/recorder/docs/usage.md)
+- Publishing Guide: See [packages/recorder/docs/publishing.md](./packages/recorder/docs/publishing.md)
+- Versioning Guide: See [packages/recorder/docs/versioning.md](./packages/recorder/docs/versioning.md)
 
 ### Recording Sessions
 

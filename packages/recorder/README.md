@@ -28,7 +28,7 @@ await recorder.exportLog();
 
 ## 📖 Full Documentation
 
-See [HOW_TO_USE_RECORDER_PACKAGE.md](../../HOW_TO_USE_RECORDER_PACKAGE.md) for complete documentation.
+See [docs/usage.md](./docs/usage.md) for complete documentation.
 
 ## 🔧 Features
 

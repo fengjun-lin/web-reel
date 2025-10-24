@@ -289,7 +289,7 @@ vercel rollback
 - [Vercel Documentation](https://vercel.com/docs)
 - [Vite Deployment Documentation](https://vitejs.dev/guide/static-deploy.html#vercel)
 - [OpenAI API Documentation](https://platform.openai.com/docs)
-- [Web Reel Project Documentation](./README.md)
+- [Web Reel Project Documentation](../README.md)
 
 ## Support
 
