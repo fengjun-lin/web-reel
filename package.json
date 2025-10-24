@@ -17,6 +17,7 @@
     "dev:recorder": "cd packages/recorder && npm run dev",
     "build:all": "npm run build:recorder && npm run build",
     "clean": "rm -rf node_modules packages/*/node_modules apps/*/node_modules packages/*/dist .next",
+    "db:init": "node scripts/init-db.js",
     "prepare": "husky install"
   },
   "lint-staged": {
@@ -31,6 +32,7 @@
     "jira.js": "^5.2.2",
     "jszip": "^3.10.1",
     "next": "^16.0.0",
+    "pg-promise": "^12.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-markdown": "^10.1.0",
@@ -40,8 +42,10 @@
   "devDependencies": {
     "@eslint/js": "^9.37.0",
     "@types/node": "^24.7.2",
+    "@types/pg-promise": "^0.0.28",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
+    "dotenv": "^17.2.3",
     "eslint": "^9.37.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",
