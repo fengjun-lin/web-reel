@@ -12,9 +12,13 @@ export { exportToFile, exportToZip, exportToJson } from './export';
 export type { RecordCollection } from './export';
 export { importFromFile, importFromZip, importFromJson } from './import';
 
+// Upload utilities
+export { uploadSession } from './upload';
+export type { UploadOptions, UploadResponse } from './upload';
+
 // Network interceptor
-export { NetworkInterceptor } from './interceptors';
-export type { InterceptorConfig as NetworkInterceptorConfig } from './interceptors';
+export { NetworkInterceptor, URLInterceptor } from './interceptors';
+export type { InterceptorConfig as NetworkInterceptorConfig, URLChangeHandler } from './interceptors';
 export type { HarEntry } from './types/har';
 
 // Entry button UI (optional)

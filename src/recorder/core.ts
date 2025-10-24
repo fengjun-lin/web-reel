@@ -2,8 +2,10 @@ import { record, getRecordConsolePlugin } from 'rrweb';
 import type { eventWithTime } from 'rrweb/typings/types';
 
 import { exportToFile, exportToZip } from './export';
-import { NetworkInterceptor } from './interceptors';
+import { NetworkInterceptor, URLInterceptor } from './interceptors';
 import { EntryButton } from './ui';
+import { uploadSession } from './upload';
+import type { UploadOptions } from './upload';
 
 import { DB_INDEX_KEY, DB_TABLE_NAME } from '@/constants/db';
 import { LOCAL_UPLOADING_FLAG, UNKNOWN_DEVICE_ID } from '@/constants/session';
@@ -30,10 +32,12 @@ export class WebReelRecorder {
   private db!: IDB;
   private sessionId: number; // Current session ID (timestamp)
   private networkInterceptor?: NetworkInterceptor;
+  private urlInterceptor?: URLInterceptor;
   private stopRecordingFn?: () => void;
   private pollUploadFlagTimer?: number;
   private entryButton?: EntryButton;
   private isReady: boolean = false; // Whether the recorder is fully initialized
+  private recordAddCustomEvent?: (_tag: string, _payload: any) => void;
 
   constructor(config: RecorderConfig) {
     this.config = this.parseConfig(config);
@@ -94,6 +98,9 @@ export class WebReelRecorder {
     // Initialize rrweb recording
     this.initializeRecording();
 
+    // Initialize URL interceptor (after rrweb recording)
+    this.initializeURLInterceptor();
+
     // Setup window unload handler
     this.setupUnloadHandler();
 
@@ -134,13 +141,21 @@ export class WebReelRecorder {
       return;
     }
 
+    // Determine button mode based on configuration
+    const isUploadMode = !!this.config.uploadEndpoint;
+
     this.entryButton = new EntryButton({
+      mode: isUploadMode ? 'upload' : 'download',
       onClick: () => {
-        this.exportLog();
+        if (isUploadMode) {
+          this.uploadLog();
+        } else {
+          this.exportLog();
+        }
       },
     });
 
-    console.log('[Web-Reel] Entry button initialized');
+    console.log(`[Web-Reel] Entry button initialized in ${isUploadMode ? 'upload' : 'download'} mode`);
   }
 
   /**
@@ -226,7 +241,58 @@ export class WebReelRecorder {
       ],
     });
 
+    // Store the addCustomEvent function reference
+    // rrweb's record function doesn't directly expose addCustomEvent,
+    // so we'll use the event system to emit custom events
+    this.recordAddCustomEvent = (tag: string, payload: any) => {
+      // Create a custom event in rrweb format
+      const customEvent = {
+        type: 5, // Custom event type
+        data: {
+          tag,
+          payload,
+        },
+        timestamp: Date.now(),
+      };
+
+      // Save to database
+      this.db
+        .add(
+          {
+            [DB_INDEX_KEY]: this.sessionId,
+            ...customEvent,
+          },
+          DB_TABLE_NAME.RENDER_EVENT,
+        )
+        .catch(() => {
+          // Silently ignore errors
+        });
+    };
+
     console.log('[Web-Reel] rrweb recording initialized with console plugin');
+  }
+
+  /**
+   * Initialize URL interceptor
+   */
+  private initializeURLInterceptor(): void {
+    this.urlInterceptor = new URLInterceptor({
+      onURLChange: (url, trigger) => {
+        console.log(`[Web-Reel] URL changed (${trigger}): ${url}`);
+
+        // Record URL change as custom event
+        if (this.recordAddCustomEvent) {
+          this.recordAddCustomEvent('url-change', {
+            url,
+            trigger,
+            timestamp: Date.now(),
+          });
+        }
+      },
+    });
+
+    this.urlInterceptor.install();
+    console.log('[Web-Reel] URL interceptor initialized');
   }
 
   /**
@@ -300,6 +366,86 @@ export class WebReelRecorder {
       } catch (error) {
         console.error('[Web-Reel Export] ❌ Failed to clear data:', error);
       }
+    }
+  }
+
+  /**
+   * Upload session data to server
+   * @param clearAfterUpload - Whether to clear data after successful upload (default: true)
+   * @returns Promise with upload result
+   */
+  public async uploadLog(clearAfterUpload: boolean = true): Promise<void> {
+    if (!this.config.uploadEndpoint) {
+      throw new Error('[Web-Reel Upload] uploadEndpoint is not configured');
+    }
+
+    console.log('[Web-Reel Upload] Starting upload...');
+
+    const eventDataMap = await this.db.getByIndexKey(DB_TABLE_NAME.RENDER_EVENT, DB_INDEX_KEY);
+    const responseDataMap = await this.db.getByIndexKey(DB_TABLE_NAME.RESPONSE_DATA, DB_INDEX_KEY);
+
+    // Only upload current session to avoid data too large
+    const currentSessionId = String(this.sessionId);
+    const limitedEventDataMap =
+      currentSessionId in eventDataMap ? { [currentSessionId]: eventDataMap[currentSessionId] } : {};
+    const limitedResponseDataMap =
+      currentSessionId in responseDataMap ? { [currentSessionId]: responseDataMap[currentSessionId] } : {};
+
+    // Count total items
+    let totalEvents = (limitedEventDataMap[currentSessionId] || []).length;
+    let totalResponses = (limitedResponseDataMap[currentSessionId] || []).length;
+
+    // Limit events to prevent "Invalid string length" error
+    const MAX_EVENTS = 5000;
+    if (totalEvents > MAX_EVENTS) {
+      console.warn(`[Web-Reel Upload] Too many events (${totalEvents}), limiting to last ${MAX_EVENTS}`);
+      limitedEventDataMap[currentSessionId] = limitedEventDataMap[currentSessionId].slice(-MAX_EVENTS);
+      totalEvents = MAX_EVENTS;
+    }
+
+    console.log(`[Web-Reel Upload] Uploading current session: ${totalEvents} events, ${totalResponses} requests`);
+
+    if (totalEvents === 0 && totalResponses === 0) {
+      console.warn('[Web-Reel Upload] No data found for current session!');
+      return;
+    }
+
+    try {
+      // Prepare upload options
+      const uploadOptions: UploadOptions = {
+        endpoint: this.config.uploadEndpoint,
+        headers: this.config.uploadHeaders,
+        platform: this.config.platform,
+        deviceId: this.config.deviceId,
+        jiraId: this.config.jiraId,
+        onProgress: (progress) => {
+          console.log(`[Web-Reel Upload] Progress: ${progress.toFixed(1)}%`);
+        },
+        onSuccess: (response) => {
+          console.log('[Web-Reel Upload] ✅ Upload successful:', response);
+        },
+        onError: (error) => {
+          console.error('[Web-Reel Upload] ❌ Upload failed:', error);
+        },
+      };
+
+      // Upload session data
+      await uploadSession(limitedEventDataMap, limitedResponseDataMap, uploadOptions);
+
+      // Clear uploaded data after successful upload
+      if (clearAfterUpload) {
+        console.log('[Web-Reel Upload] Clearing data...');
+        try {
+          await this.db.clearTable(DB_TABLE_NAME.RENDER_EVENT);
+          await this.db.clearTable(DB_TABLE_NAME.RESPONSE_DATA);
+          console.log('[Web-Reel Upload] ✅ Data cleared');
+        } catch (clearError) {
+          console.error('[Web-Reel Upload] ❌ Failed to clear data:', clearError);
+        }
+      }
+    } catch (error) {
+      console.error('[Web-Reel Upload] ❌ Upload failed:', error);
+      throw error;
     }
   }
 
@@ -460,6 +606,11 @@ export class WebReelRecorder {
     if (this.networkInterceptor) {
       this.networkInterceptor.uninstall();
       console.log('[Web-Reel] Network interceptor uninstalled');
+    }
+
+    if (this.urlInterceptor) {
+      this.urlInterceptor.uninstall();
+      console.log('[Web-Reel] URL interceptor uninstalled');
     }
 
     if (this.pollUploadFlagTimer) {

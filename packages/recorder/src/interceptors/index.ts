@@ -123,5 +123,9 @@ export class NetworkInterceptor {
   }
 }
 
+// Export URL interceptor
+export { URLInterceptor } from './url';
+export type { URLChangeHandler } from './url';
+
 // Export types
 export type { HarEntry };

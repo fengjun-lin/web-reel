@@ -5,11 +5,18 @@ export interface EntryButtonOptions {
   disabled?: boolean;
   extraClass?: string;
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
+  mode?: 'download' | 'upload'; // Button mode: download or upload
 }
 
 const DOWNLOAD_ICON_SVG = `
 <svg viewBox="64 64 896 896" focusable="false" fill="currentColor" width="1em" height="1em" data-icon="download" aria-hidden="true">
   <path d="M505.7 661a8 8 0 0012.6 0l112-141.7c4.1-5.2.4-12.9-6.3-12.9h-74.1V168c0-4.4-3.6-8-8-8h-60c-4.4 0-8 3.6-8 8v338.3H400c-6.7 0-10.4 7.7-6.3 12.9l112 141.8zM878 626h-60c-4.4 0-8 3.6-8 8v154H214V634c0-4.4-3.6-8-8-8h-60c-4.4 0-8 3.6-8 8v198c0 17.7 14.3 32 32 32h684c17.7 0 32-14.3 32-32V634c0-4.4-3.6-8-8-8z"></path>
+</svg>
+`;
+
+const UPLOAD_ICON_SVG = `
+<svg viewBox="64 64 896 896" focusable="false" fill="currentColor" width="1em" height="1em" data-icon="upload" aria-hidden="true">
+  <path d="M400 317.7h73.9V656c0 4.4 3.6 8 8 8h60c4.4 0 8-3.6 8-8V317.7H624c6.7 0 10.4-7.7 6.3-12.9L518.3 163a8 8 0 00-12.6 0l-112 141.7c-4.1 5.3-.4 13 6.3 13zM878 626h-60c-4.4 0-8 3.6-8 8v154H214V634c0-4.4-3.6-8-8-8h-60c-4.4 0-8 3.6-8 8v198c0 17.7 14.3 32 32 32h684c17.7 0 32-14.3 32-32V634c0-4.4-3.6-8-8-8z"></path>
 </svg>
 `;
 
@@ -23,6 +30,7 @@ export class EntryButton {
   constructor(options: EntryButtonOptions = {}) {
     this.options = {
       position: 'bottom-right',
+      mode: 'download',
       ...options,
     };
 
@@ -68,15 +76,18 @@ export class EntryButton {
     }
 
     button.className = className;
-    button.innerHTML = DOWNLOAD_ICON_SVG;
-    button.title = 'Export Session Recording';
+
+    // Set icon and text based on mode
+    const isUploadMode = this.options.mode === 'upload';
+    button.innerHTML = isUploadMode ? UPLOAD_ICON_SVG : DOWNLOAD_ICON_SVG;
+    button.title = isUploadMode ? 'Upload Session Recording' : 'Export Session Recording';
     button.setAttribute('role', 'button');
-    button.setAttribute('aria-label', 'Export Session Recording');
+    button.setAttribute('aria-label', isUploadMode ? 'Upload Session Recording' : 'Export Session Recording');
 
     // Add tooltip element
     const tooltip = document.createElement('span');
     tooltip.className = 'web-reel-entry-button-tooltip';
-    tooltip.textContent = 'Export Session Recording';
+    tooltip.textContent = isUploadMode ? 'Upload Session Recording' : 'Export Session Recording';
     button.appendChild(tooltip);
 
     return button;
@@ -149,6 +160,27 @@ export class EntryButton {
     // Add new position class
     this.element.classList.add(`web-reel-entry-button--${position}`);
     this.options.position = position;
+  }
+
+  /**
+   * Update button mode
+   */
+  public setMode(mode: 'download' | 'upload'): void {
+    if (!this.element) return;
+
+    this.options.mode = mode;
+
+    // Update icon and text
+    const isUploadMode = mode === 'upload';
+    this.element.innerHTML = isUploadMode ? UPLOAD_ICON_SVG : DOWNLOAD_ICON_SVG;
+    this.element.title = isUploadMode ? 'Upload Session Recording' : 'Export Session Recording';
+    this.element.setAttribute('aria-label', isUploadMode ? 'Upload Session Recording' : 'Export Session Recording');
+
+    // Update tooltip
+    const tooltip = document.createElement('span');
+    tooltip.className = 'web-reel-entry-button-tooltip';
+    tooltip.textContent = isUploadMode ? 'Upload Session Recording' : 'Export Session Recording';
+    this.element.appendChild(tooltip);
   }
 
   /**

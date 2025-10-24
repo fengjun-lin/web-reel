@@ -151,7 +151,7 @@ The recorder SDK is now available as a standalone npm package:
 npm install @web-reel/recorder
 ```
 
-**Quick Start:**
+**Quick Start (Download Mode):**
 
 ```typescript
 import { WebReelRecorder } from '@web-reel/recorder';
@@ -163,8 +163,30 @@ const recorder = new WebReelRecorder({
   deviceId: 'user-123',
 });
 
-// Export session data
+// Export session data as ZIP file
 await recorder.exportLog();
+```
+
+**Quick Start (Upload Mode):**
+
+```typescript
+import { WebReelRecorder } from '@web-reel/recorder';
+
+const recorder = new WebReelRecorder({
+  env: 'test',
+  appId: 1,
+  projectName: 'my-app',
+  deviceId: 'user-123',
+  // Upload configuration
+  uploadEndpoint: '/api/sessions',
+  platform: 'web',
+  jiraId: 'ISSUE-123',
+});
+
+// Upload session directly to server
+await recorder.uploadLog();
+
+// Button automatically switches to upload icon when uploadEndpoint is configured
 ```
 
 **Documentation:**
@@ -177,10 +199,11 @@ await recorder.exportLog();
 
 #### Method 1: Use Test Page (Recommended for development)
 
-1. Navigate to `http://localhost:5174/#/test`
+1. Navigate to `http://localhost:3000/test`
 2. Click "Start Recording"
 3. Perform actions (clicks, typing, network requests)
 4. Click "Export ZIP" to download the session
+5. Click "Upload Session" to upload directly to server (POST /api/sessions)
 
 #### Method 2: Integrate into Your Project
 
@@ -241,6 +264,13 @@ interface RecorderConfig {
   // -1 = never delete, 0 = keep only current session
   disabledDownLoad?: boolean; // Hide download button (default: false)
   enableStats?: boolean; // Enable PV/ENV stats upload (default: false)
+
+  // Upload mode configuration (NEW!)
+  uploadEndpoint?: string; // API endpoint for upload (e.g. '/api/sessions')
+  // When set, button switches to upload mode automatically
+  uploadHeaders?: Record<string, string>; // Custom headers for upload requests
+  platform?: string; // Platform identifier for metadata (e.g. 'web', 'mobile')
+  jiraId?: string; // Jira ticket ID for metadata
 }
 ```
 
@@ -250,9 +280,16 @@ interface RecorderConfig {
 // Stop recording
 recorder.stop();
 
-// Export logs to file
-await recorder.exportLog(); // Export as JSON
-await recorder.exportLog(true); // Export as ZIP
+// Export logs to file (download)
+await recorder.exportLog(); // Export as ZIP (default)
+await recorder.exportLog(true, 'json'); // Export as JSON
+
+// Upload logs to server (NEW!)
+await recorder.uploadLog(); // Upload and clear data
+await recorder.uploadLog(false); // Upload but keep data
+
+// Import logs from file
+await recorder.importLog(file); // Import from ZIP or JSON file
 
 // Get current session ID
 const sessionId = recorder.getSessionId();

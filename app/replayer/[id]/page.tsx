@@ -40,6 +40,8 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
   const [consoleLogs, setConsoleLogs] = useState<LogInfo[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   const [showJiraModal, setShowJiraModal] = useState(false);
+  const [currentUrl, setCurrentUrl] = useState<string>('');
+  const [urlHistory, setUrlHistory] = useState<Array<{ url: string; timestamp: number; trigger: string }>>([]);
 
   // Load session from sessionStorage on mount
   useEffect(() => {
@@ -400,10 +402,12 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
 
   const extractConsoleLogs = (events: eventWithTime[]) => {
     const logs: LogInfo[] = [];
+    const urls: Array<{ url: string; timestamp: number; trigger: string }> = [];
 
     // Extract console logs from rrweb events
     // rrweb records console logs as plugin events (type 6) with plugin name 'rrweb/console@1'
     events.forEach((event: any) => {
+      // Console logs (type 6)
       if (event.type === 6 && event.data?.plugin === 'rrweb/console@1') {
         const payload = event.data.payload;
         if (payload && payload.level) {
@@ -414,11 +418,50 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
           });
         }
       }
+
+      // URL change events (type 5, custom events)
+      if (event.type === 5 && event.data?.tag === 'url-change') {
+        const payload = event.data.payload;
+        if (payload && payload.url) {
+          urls.push({
+            url: payload.url,
+            timestamp: event.timestamp,
+            trigger: payload.trigger,
+          });
+        }
+      }
     });
 
     console.log('[Replay] Extracted', logs.length, 'console logs');
+    console.log('[Replay] Extracted', urls.length, 'URL changes');
+
     setConsoleLogs(logs);
+    setUrlHistory(urls);
+
+    // Set initial URL
+    if (urls.length > 0 && urls[0]) {
+      setCurrentUrl(urls[0].url);
+    }
   };
+
+  // Update current URL based on playback time
+  useEffect(() => {
+    if (urlHistory.length === 0 || !urlHistory[0]) return;
+
+    // Find the most recent URL change before or at the current time
+    let matchedUrl = urlHistory[0].url;
+    for (const urlChange of urlHistory) {
+      if (urlChange.timestamp <= currentTime) {
+        matchedUrl = urlChange.url;
+      } else {
+        break;
+      }
+    }
+
+    if (matchedUrl !== currentUrl) {
+      setCurrentUrl(matchedUrl);
+    }
+  }, [currentTime, urlHistory, currentUrl]);
 
   const handleSeekToTime = (timestamp: number) => {
     const player = playerRef.current;
@@ -510,10 +553,39 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
                   padding: 0,
                   display: 'flex',
                   flexDirection: 'column',
-                  overflow: 'hidden',
                 },
               }}
             >
+              {/* URL Display Bar */}
+              {currentUrl && (
+                <div
+                  style={{
+                    marginBottom: 12,
+                    padding: '8px 12px',
+                    background: '#f0f5ff',
+                    borderRadius: 4,
+                    border: '1px solid #d6e4ff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                  }}
+                >
+                  <span style={{ color: '#1890ff', fontSize: 14, fontWeight: 500 }}>🔗</span>
+                  <Text
+                    style={{
+                      flex: 1,
+                      fontSize: 13,
+                      fontFamily: 'monospace',
+                      color: '#262626',
+                    }}
+                    ellipsis={{ tooltip: currentUrl }}
+                  >
+                    {currentUrl}
+                  </Text>
+                </div>
+              )}
+
+              {/* Player Container */}
               <div
                 ref={containerRef}
                 style={{
@@ -533,7 +605,7 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
             <Card
               title="Session Details"
               style={{
-                flex: '0 0 45%',
+                flex: '1',
                 maxWidth: '45%',
                 display: 'flex',
                 flexDirection: 'column',
@@ -557,7 +629,7 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
                     key: 'logs',
                     label: `Console (${consoleLogs.length})`,
                     children: (
-                      <div style={{ height: 'calc(100vh - 300px)', overflow: 'hidden' }}>
+                      <div style={{ height: 'calc(100% - 46px)', overflow: 'hidden' }}>
                         <ConsolePanel logs={consoleLogs} currentTime={currentTime} onSeekToTime={handleSeekToTime} />
                       </div>
                     ),
@@ -566,7 +638,7 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
                     key: 'network',
                     label: `Network (${sessionData.responseData.length})`,
                     children: (
-                      <div style={{ height: 'calc(100vh - 300px)', overflow: 'hidden' }}>
+                      <div style={{ height: 'calc(100% - 46px)', overflow: 'hidden' }}>
                         <NetworkPanel
                           requests={sessionData.responseData}
                           currentTime={currentTime}
@@ -579,7 +651,7 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string }>
                     key: 'ai-analysis',
                     label: '🤖 AI Analysis',
                     children: (
-                      <div style={{ height: 'calc(100vh - 300px)', overflow: 'hidden' }}>
+                      <div style={{ height: 'calc(100% - 46px)', overflow: 'hidden' }}>
                         <AIAnalysisPanel
                           logs={consoleLogs}
                           requests={sessionData.responseData}

@@ -31,6 +31,10 @@ export default function RecorderTestPage() {
         recordInterval: 10000,
         disabledDownLoad: false,
         enableStats: false, // Disable stats to avoid API errors
+        // Upload configuration (optional)
+        uploadEndpoint: '/api/sessions',
+        platform: 'web',
+        jiraId: 'TEST-123',
       });
 
       recorderRef.current = recorder;
@@ -108,6 +112,18 @@ export default function RecorderTestPage() {
     }
   };
 
+  const uploadSession = async () => {
+    if (recorderRef.current) {
+      try {
+        await recorderRef.current.uploadLog();
+        message.success('Session uploaded successfully!');
+      } catch (error) {
+        console.error('Upload failed:', error);
+        message.error(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+  };
+
   const makeTestRequest = async () => {
     try {
       await fetch('https://jsonplaceholder.typicode.com/posts/1');
@@ -152,6 +168,10 @@ export default function RecorderTestPage() {
 
           <Button onClick={exportZIP} disabled={!isRecording}>
             Export ZIP
+          </Button>
+
+          <Button type="primary" onClick={uploadSession} disabled={!isRecording}>
+            Upload Session
           </Button>
         </Space>
       </Card>
@@ -225,7 +245,8 @@ export default function RecorderTestPage() {
           <Text>4. Open DevTools → Application → IndexedDB → WebReelDB</Text>
           <Text>5. Verify renderEvent and responseData tables have data</Text>
           <Text>6. Click &quot;Export ZIP&quot; to download recording</Text>
-          <Text>7. Go to home page and upload the file to test replay</Text>
+          <Text>7. Click &quot;Upload Session&quot; to upload to API (POST /api/sessions)</Text>
+          <Text>8. Go to home page and upload the file to test replay</Text>
         </Space>
       </Card>
     </Space>

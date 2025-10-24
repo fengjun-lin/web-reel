@@ -86,6 +86,10 @@ export interface RecorderOption {
   disabledDownLoad?: boolean; // Whether to hide download button
   recordInterval?: number; // Log retention duration in days, 0 for no history, -1 for unlimited
   enableStats?: boolean; // Whether to enable PV and ENV statistics upload, default: false
+  uploadEndpoint?: string; // API endpoint for uploading sessions (e.g. '/api/sessions'). If provided, button will upload instead of download
+  uploadHeaders?: Record<string, string>; // Custom headers for upload requests
+  platform?: string; // Platform identifier for session metadata (e.g. 'web', 'mobile')
+  jiraId?: string; // Jira ticket ID for session metadata
 }
 
 // Upload flag types
