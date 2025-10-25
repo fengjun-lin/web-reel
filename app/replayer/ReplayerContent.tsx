@@ -47,8 +47,8 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
   const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
   const [showProgress, setShowProgress] = useState(false);
   const downloadTimersRef = useRef<{
-    showDelay: NodeJS.Timeout | null;
-    hideDelay: NodeJS.Timeout | null;
+    showDelay: ReturnType<typeof setTimeout> | null;
+    hideDelay: ReturnType<typeof setTimeout> | null;
     startTime: number | null;
   }>({
     showDelay: null,
@@ -66,12 +66,13 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
 
   // Cleanup timers on unmount
   useEffect(() => {
+    const timers = downloadTimersRef.current;
     return () => {
-      if (downloadTimersRef.current.showDelay) {
-        clearTimeout(downloadTimersRef.current.showDelay);
+      if (timers.showDelay) {
+        clearTimeout(timers.showDelay);
       }
-      if (downloadTimersRef.current.hideDelay) {
-        clearTimeout(downloadTimersRef.current.hideDelay);
+      if (timers.hideDelay) {
+        clearTimeout(timers.hideDelay);
       }
     };
   }, []);
@@ -227,7 +228,7 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
       message.success(`Session ${id} loaded successfully`);
     } catch (error) {
       console.error('Failed to load session:', error);
-      
+
       // Clear all timers on error
       if (downloadTimersRef.current.showDelay) {
         clearTimeout(downloadTimersRef.current.showDelay);
@@ -235,23 +236,33 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
       if (downloadTimersRef.current.hideDelay) {
         clearTimeout(downloadTimersRef.current.hideDelay);
       }
-      
+
       // Clear progress states
       setShowProgress(false);
       setDownloadProgress(null);
-      
+
       // Friendly error handling
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      
-      if (errorMessage.includes('network') || errorMessage.includes('fetch') || errorMessage.includes('Failed to download')) {
+
+      if (
+        errorMessage.includes('network') ||
+        errorMessage.includes('fetch') ||
+        errorMessage.includes('Failed to download')
+      ) {
         // Network-related errors - offer retry
         message.error({
           content: (
             <span>
-              Network error while downloading session. <a onClick={() => {
-                message.destroy();
-                loadSessionById(id);
-              }} style={{ textDecoration: 'underline', cursor: 'pointer' }}>Click here to retry</a>
+              Network error while downloading session.{' '}
+              <a
+                onClick={() => {
+                  message.destroy();
+                  loadSessionById(id);
+                }}
+                style={{ textDecoration: 'underline', cursor: 'pointer' }}
+              >
+                Click here to retry
+              </a>
             </span>
           ),
           duration: 10,
@@ -259,7 +270,7 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
       } else {
         message.error(`Failed to load session: ${errorMessage}`);
       }
-      
+
       setHasError(true);
     } finally {
       setLoading(false);
@@ -716,8 +727,8 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
         <Card>
           <Space direction="vertical" size="small" style={{ width: '100%' }}>
             <Text strong>Downloading session file...</Text>
-            <Progress 
-              percent={Math.round(downloadProgress.percentage)} 
+            <Progress
+              percent={Math.round(downloadProgress.percentage)}
               status="active"
               format={(percent) => `${percent}%`}
             />
@@ -727,7 +738,8 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
               </Text>
               <Text type="secondary">
                 {formatSpeed(downloadProgress.speed)}
-                {downloadProgress.remainingTime > 0 && downloadProgress.remainingTime < 3600 && 
+                {downloadProgress.remainingTime > 0 &&
+                  downloadProgress.remainingTime < 3600 &&
                   ` • ${formatDuration(downloadProgress.remainingTime)} remaining`}
               </Text>
             </div>

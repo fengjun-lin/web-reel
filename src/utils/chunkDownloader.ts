@@ -11,7 +11,7 @@ export interface DownloadOptions {
   chunkSize?: number; // Default: 1MB
   maxConcurrent?: number; // Default: 6
   maxRetries?: number; // Default: 3
-  onProgress?: (progress: DownloadProgress) => void;
+  onProgress?: (_progress: DownloadProgress) => void;
 }
 
 export interface DownloadProgress {
@@ -101,7 +101,7 @@ async function getFileSize(url: string): Promise<number> {
 async function downloadDirect(
   url: string,
   fileSize: number,
-  onProgress?: (progress: DownloadProgress) => void,
+  onProgress?: (_progress: DownloadProgress) => void,
 ): Promise<ArrayBuffer> {
   const startTime = Date.now();
 
@@ -178,7 +178,7 @@ async function downloadInChunks(
   chunkSize: number,
   maxConcurrent: number,
   maxRetries: number,
-  onProgress?: (progress: DownloadProgress) => void,
+  onProgress?: (_progress: DownloadProgress) => void,
 ): Promise<ArrayBuffer> {
   // Calculate chunks
   const chunks: ChunkInfo[] = [];
@@ -247,11 +247,10 @@ async function downloadChunksWithConcurrency(
   maxConcurrent: number,
   maxRetries: number,
   url: string,
-  onChunkProgress: (index: number, loaded: number) => void,
+  onChunkProgress: (_index: number, _loaded: number) => void,
 ): Promise<ArrayBuffer[]> {
   const results: ArrayBuffer[] = new Array(chunks.length);
   const executing: Promise<void>[] = [];
-  let completed = 0;
 
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i];
@@ -262,7 +261,6 @@ async function downloadChunksWithConcurrency(
           onChunkProgress(chunk.index, loaded);
         });
         results[chunk.index] = buffer;
-        completed++;
         console.log(`[Chunk Downloader] Chunk ${chunk.index + 1}/${chunks.length} completed`);
       } catch (error) {
         throw new Error(`Chunk ${chunk.index} failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -303,7 +301,7 @@ async function downloadChunkWithRetry(
   start: number,
   end: number,
   maxRetries: number,
-  onProgress?: (loaded: number) => void,
+  onProgress: (_loaded: number) => void,
 ): Promise<ArrayBuffer> {
   let lastError: Error | null = null;
 
@@ -337,10 +335,7 @@ async function downloadChunkWithRetry(
 
           chunks.push(value);
           loaded += value.length;
-
-          if (onProgress) {
-            onProgress(loaded);
-          }
+          onProgress(loaded);
         }
 
         // Concatenate chunks
@@ -356,9 +351,7 @@ async function downloadChunkWithRetry(
       } else {
         // Fallback
         const buffer = await response.arrayBuffer();
-        if (onProgress) {
-          onProgress(buffer.byteLength);
-        }
+        onProgress(buffer.byteLength);
         return buffer;
       }
     } catch (error) {
