@@ -46,6 +46,10 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
   const [urlHistory, setUrlHistory] = useState<Array<{ url: string; timestamp: number; trigger: string }>>([]);
   const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
   const [showProgress, setShowProgress] = useState(false);
+  const [jiraId, setJiraId] = useState<string | null>(null);
+
+  // Jira configuration from environment variables
+  const jiraDomain = process.env.NEXT_PUBLIC_JIRA_DOMAIN || 'web-reel.atlassian.net';
 
   // Load session from sessionStorage on mount (only if sessionId is provided)
   useEffect(() => {
@@ -71,6 +75,9 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
         setDownloadProgress(null);
         return;
       }
+
+      // Store Jira ID if available
+      setJiraId(data.session.jira_id || null);
 
       // Record start time when download actually begins
       let progressStartTime: number | null = null;
@@ -639,9 +646,15 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
               Upload Session File
             </Button>
           </Upload>
-          <Button type="default" onClick={() => setShowJiraModal(true)} disabled={!sessionData}>
-            Create Jira Ticket
-          </Button>
+          {jiraId ? (
+            <Button type="default" onClick={() => window.open(`https://${jiraDomain}/browse/${jiraId}`, '_blank')}>
+              View Jira: {jiraId}
+            </Button>
+          ) : (
+            <Button type="default" onClick={() => setShowJiraModal(true)} disabled={!sessionData}>
+              Create Jira Ticket
+            </Button>
+          )}
         </Space>
       </div>
 
@@ -849,6 +862,7 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
         sessionId={sessionId}
         logs={consoleLogs}
         requests={sessionData?.responseData || []}
+        onJiraCreated={(issueKey) => setJiraId(issueKey)}
       />
     </Space>
   );

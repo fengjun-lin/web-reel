@@ -24,6 +24,7 @@ interface CreateJiraModalProps {
   sessionId?: string;
   logs?: LogInfo[];
   requests?: HarEntry[];
+  onJiraCreated?: (_issueKey: string) => void;
 }
 
 export default function CreateJiraModal({
@@ -32,6 +33,7 @@ export default function CreateJiraModal({
   sessionId,
   logs = [],
   requests = [],
+  onJiraCreated,
 }: CreateJiraModalProps) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -168,6 +170,35 @@ export default function CreateJiraModal({
           issueKey: result.issueKey,
           issueUrl: result.issueUrl,
         });
+
+        // Notify parent component
+        if (onJiraCreated) {
+          onJiraCreated(result.issueKey);
+        }
+
+        // Patch Jira ID to session
+        if (sessionId) {
+          try {
+            const response = await fetch(`/api/sessions/${sessionId}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                jira_id: result.issueKey,
+              }),
+            });
+
+            if (response.ok) {
+              console.log(`Session ${sessionId} updated with Jira ID: ${result.issueKey}`);
+            } else {
+              console.error('Failed to update session with Jira ID');
+            }
+          } catch (error) {
+            console.error('Error updating session with Jira ID:', error);
+          }
+        }
+
         // Don't close immediately to show success message
       } else {
         message.error(`Failed to create Jira ticket: ${result.error || 'Unknown error'}`);
@@ -188,6 +219,8 @@ export default function CreateJiraModal({
   };
 
   // Initialize form with default values
+  const replayUrl = sessionId ? `https://tubi-web-reel.vercel.app/replayer/${sessionId}` : '';
+
   const initialValues = {
     summary: `Bug Report: Session ${sessionId || 'Unknown'}`,
     description: `h3. Environment
@@ -199,6 +232,9 @@ h3. Steps
 h3. Expected result
 
 h3. Actual result
+
+h3. Replay URL
+${replayUrl}
 `,
   };
 
@@ -430,6 +466,13 @@ function formatAIResultToDescription(
     sections.push(`*Request:* {{${topNetworkError.method}}} ${topNetworkError.url}`);
     sections.push(`*Status:* {color:red}${topNetworkError.status} ${topNetworkError.statusText}{color}`);
     sections.push(`{panel}`);
+  }
+
+  // Add Replay URL Section
+  if (sessionId) {
+    sections.push('');
+    sections.push(`h3. Replay URL`);
+    sections.push(`https://tubi-web-reel.vercel.app/replayer/${sessionId}`);
   }
 
   return sections.join('\n');
