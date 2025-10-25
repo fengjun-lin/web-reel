@@ -34,8 +34,6 @@ export class NetworkInterceptor {
       return;
     }
 
-    console.log('[NetworkInterceptor] Installing interceptors...');
-
     // Install XHR interceptor
     this.uninstallXhr = installXhrInterceptor({
       onRequest: (data) => {
@@ -81,7 +79,6 @@ export class NetworkInterceptor {
     });
 
     this.isInstalled = true;
-    console.log('[NetworkInterceptor] Interceptors installed successfully');
   }
 
   /**
@@ -93,16 +90,12 @@ export class NetworkInterceptor {
       return;
     }
 
-    console.log('[NetworkInterceptor] Uninstalling interceptors...');
-
     this.uninstallXhr?.();
     this.uninstallFetch?.();
 
     this.uninstallXhr = undefined;
     this.uninstallFetch = undefined;
     this.isInstalled = false;
-
-    console.log('[NetworkInterceptor] Interceptors uninstalled successfully');
   }
 
   /**

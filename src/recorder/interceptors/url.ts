@@ -50,7 +50,6 @@ export class URLInterceptor {
     window.addEventListener('hashchange', this.handleHashchange);
 
     this.isInstalled = true;
-    console.log('[URLInterceptor] Installed');
   }
 
   /**
@@ -70,7 +69,6 @@ export class URLInterceptor {
     window.removeEventListener('hashchange', this.handleHashchange);
 
     this.isInstalled = false;
-    console.log('[URLInterceptor] Uninstalled');
   }
 
   /**

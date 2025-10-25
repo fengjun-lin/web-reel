@@ -66,8 +66,6 @@ export class WebReelRecorder {
       this.config.deviceId = UNKNOWN_DEVICE_ID;
     }
 
-    console.log('[Web-Reel] Welcome to Web-Reel user behavior recording tool');
-
     // Start setup
     this.setup();
   }
@@ -81,7 +79,6 @@ export class WebReelRecorder {
     if (!uploadEndpoint && config.env === 'online') {
       // Default production endpoint
       uploadEndpoint = 'https://tubi-web-reel.vercel.app/api/sessions';
-      console.log('[Web-Reel] Using default production upload endpoint');
     }
 
     return {
@@ -135,7 +132,6 @@ export class WebReelRecorder {
 
     // Mark as ready
     this.isReady = true;
-    console.log('[Web-Reel] Recording started successfully');
   }
 
   /**
@@ -172,8 +168,6 @@ export class WebReelRecorder {
         }
       },
     });
-
-    console.log(`[Web-Reel] Entry button initialized in ${isUploadMode ? 'upload' : 'download'} mode`);
   }
 
   /**
@@ -199,7 +193,6 @@ export class WebReelRecorder {
     });
 
     this.networkInterceptor.install();
-    console.log('[Web-Reel] Network interceptor initialized');
   }
 
   /**
@@ -244,7 +237,6 @@ export class WebReelRecorder {
                 await this.db.delete(evt.id, DB_TABLE_NAME.RENDER_EVENT);
               }
 
-              console.log(`[Web-Reel] Cleaned up ${eventsToDelete.length} old events (keeping last ${MAX_EVENTS})`);
               eventCount = MAX_EVENTS;
             }
           } catch (error) {
@@ -284,9 +276,6 @@ export class WebReelRecorder {
           // Silently ignore errors
         });
     };
-
-    // This will be intercepted by our console recorder
-    console.log('[Web-Reel] rrweb recording initialized with console logging');
   }
 
   /**
@@ -295,8 +284,6 @@ export class WebReelRecorder {
   private initializeURLInterceptor(): void {
     this.urlInterceptor = new URLInterceptor({
       onURLChange: (url, trigger) => {
-        console.log(`[Web-Reel] URL changed (${trigger}): ${url}`);
-
         // Record URL change as custom event
         if (this.recordAddCustomEvent) {
           this.recordAddCustomEvent('url-change', {
@@ -309,7 +296,6 @@ export class WebReelRecorder {
     });
 
     this.urlInterceptor.install();
-    console.log('[Web-Reel] URL interceptor initialized');
   }
 
   /**
@@ -421,8 +407,6 @@ export class WebReelRecorder {
    * @param format - Export format ('zip' or 'json'), defaults to 'zip'
    */
   public async exportLog(clearAfterExport: boolean = true, format: 'zip' | 'json' = 'zip'): Promise<void> {
-    console.log('[Web-Reel Export] Starting export...');
-
     const eventDataMap = await this.db.getByIndexKey(DB_TABLE_NAME.RENDER_EVENT, DB_INDEX_KEY);
     const responseDataMap = await this.db.getByIndexKey(DB_TABLE_NAME.RESPONSE_DATA, DB_INDEX_KEY);
 
@@ -440,12 +424,9 @@ export class WebReelRecorder {
     // Limit events to prevent "Invalid string length" error
     const MAX_EVENTS = 5000;
     if (totalEvents > MAX_EVENTS) {
-      console.warn(`[Web-Reel Export] Too many events (${totalEvents}), limiting to last ${MAX_EVENTS}`);
       limitedEventDataMap[currentSessionId] = limitedEventDataMap[currentSessionId].slice(-MAX_EVENTS);
       totalEvents = MAX_EVENTS;
     }
-
-    console.log(`[Web-Reel Export] Exporting current session: ${totalEvents} events, ${totalResponses} requests`);
 
     if (totalEvents === 0 && totalResponses === 0) {
       console.warn('[Web-Reel Export] No data found for current session!');
@@ -456,11 +437,9 @@ export class WebReelRecorder {
 
     // Clear exported data after successful export
     if (clearAfterExport) {
-      console.log('[Web-Reel Export] Clearing data...');
       try {
         await this.db.clearTable(DB_TABLE_NAME.RENDER_EVENT);
         await this.db.clearTable(DB_TABLE_NAME.RESPONSE_DATA);
-        console.log('[Web-Reel Export] ✅ Data cleared');
       } catch (clearError) {
         console.error('[Web-Reel Export] ❌ Failed to clear data:', clearError);
       }
@@ -474,22 +453,15 @@ export class WebReelRecorder {
    * @returns Promise with import status
    */
   public async importLog(file: File, clearBeforeImport: boolean = false): Promise<void> {
-    console.log('[Web-Reel Import] Starting import...');
-
     try {
       // Clear existing data if requested
       if (clearBeforeImport) {
-        console.log('[Web-Reel Import] Clearing existing data...');
         await this.db.clearTable(DB_TABLE_NAME.RENDER_EVENT);
         await this.db.clearTable(DB_TABLE_NAME.RESPONSE_DATA);
       }
 
       // Import data from file
       const collection: RecordCollection = await importFromFile(file);
-
-      // Save imported data to database
-      let totalEvents = 0;
-      let totalResponses = 0;
 
       for (const sessionId of Object.keys(collection)) {
         const sessionData = collection[sessionId];
@@ -506,7 +478,6 @@ export class WebReelRecorder {
             },
             DB_TABLE_NAME.RENDER_EVENT,
           );
-          totalEvents++;
         }
 
         // Add responses
@@ -518,11 +489,8 @@ export class WebReelRecorder {
             },
             DB_TABLE_NAME.RESPONSE_DATA,
           );
-          totalResponses++;
         }
       }
-
-      console.log(`[Web-Reel Import] ✅ Import completed: ${totalEvents} events, ${totalResponses} requests`);
     } catch (error) {
       console.error('[Web-Reel Import] ❌ Import failed:', error);
       throw error;
@@ -538,8 +506,6 @@ export class WebReelRecorder {
     if (!this.config.uploadEndpoint) {
       throw new Error('[Web-Reel Upload] uploadEndpoint is not configured');
     }
-
-    console.log('[Web-Reel Upload] Starting upload...');
 
     const eventDataMap = await this.db.getByIndexKey(DB_TABLE_NAME.RENDER_EVENT, DB_INDEX_KEY);
     const responseDataMap = await this.db.getByIndexKey(DB_TABLE_NAME.RESPONSE_DATA, DB_INDEX_KEY);
@@ -558,12 +524,9 @@ export class WebReelRecorder {
     // Limit events to prevent "Invalid string length" error
     const MAX_EVENTS = 5000;
     if (totalEvents > MAX_EVENTS) {
-      console.warn(`[Web-Reel Upload] Too many events (${totalEvents}), limiting to last ${MAX_EVENTS}`);
       limitedEventDataMap[currentSessionId] = limitedEventDataMap[currentSessionId].slice(-MAX_EVENTS);
       totalEvents = MAX_EVENTS;
     }
-
-    console.log(`[Web-Reel Upload] Uploading current session: ${totalEvents} events, ${totalResponses} requests`);
 
     if (totalEvents === 0 && totalResponses === 0) {
       console.warn('[Web-Reel Upload] No data found for current session!');
@@ -582,18 +545,14 @@ export class WebReelRecorder {
         deviceId: this.config.deviceId,
         jiraId: this.config.jiraId,
         onProgress: (progress) => {
-          console.log(`[Web-Reel Upload] Progress: ${progress.toFixed(1)}%`);
           progressIndicator.updateProgress(progress);
         },
         onSuccess: (response) => {
-          console.log('[Web-Reel Upload] ✅ Upload successful:', response);
           progressIndicator.remove();
 
           // Show replay link if session id is available
           if (response.session?.id) {
             const replayUrl = `https://tubi-web-reel.vercel.app/replayer/${response.session.id}`;
-            console.log(`[Web-Reel Upload] 🎬 View replay: ${replayUrl}`);
-
             // Show browser notification with clickable link
             this.showUploadSuccessNotification(replayUrl);
           }
@@ -609,11 +568,9 @@ export class WebReelRecorder {
 
       // Clear uploaded data after successful upload
       if (clearAfterUpload) {
-        console.log('[Web-Reel Upload] Clearing data...');
         try {
           await this.db.clearTable(DB_TABLE_NAME.RENDER_EVENT);
           await this.db.clearTable(DB_TABLE_NAME.RESPONSE_DATA);
-          console.log('[Web-Reel Upload] ✅ Data cleared');
         } catch (clearError) {
           console.error('[Web-Reel Upload] ❌ Failed to clear data:', clearError);
         }
@@ -983,7 +940,6 @@ export class WebReelRecorder {
           // Delete uploaded data
           await this.db.deleteDataByIndexValue(DB_TABLE_NAME.RENDER_EVENT, DB_INDEX_KEY, sessionId);
           await this.db.deleteDataByIndexValue(DB_TABLE_NAME.RESPONSE_DATA, DB_INDEX_KEY, sessionId);
-          console.log(`[Web-Reel] Session ${sessionId} uploaded successfully`);
         }
       } catch (error) {
         console.error(`[Web-Reel] Failed to upload session ${sessionId}:`, error);
@@ -997,17 +953,14 @@ export class WebReelRecorder {
   public stop(): void {
     if (this.stopRecordingFn) {
       this.stopRecordingFn();
-      console.log('[Web-Reel] Recording stopped');
     }
 
     if (this.networkInterceptor) {
       this.networkInterceptor.uninstall();
-      console.log('[Web-Reel] Network interceptor uninstalled');
     }
 
     if (this.urlInterceptor) {
       this.urlInterceptor.uninstall();
-      console.log('[Web-Reel] URL interceptor uninstalled');
     }
 
     if (this.pollUploadFlagTimer) {
@@ -1017,7 +970,6 @@ export class WebReelRecorder {
 
     if (this.entryButton) {
       this.entryButton.destroy();
-      console.log('[Web-Reel] Entry button destroyed');
     }
   }
 

@@ -58,18 +58,13 @@ export async function downloadWithChunks(options: DownloadOptions): Promise<Arra
     onProgress,
   } = options;
 
-  console.log('[Chunk Downloader] Starting download:', url);
-
   // Get file size (use provided or fetch via HEAD request)
   const fileSize = providedFileSize ?? (await getFileSize(url));
-  console.log('[Chunk Downloader] File size:', formatBytes(fileSize));
 
   // Decide download strategy based on file size
   if (fileSize < DEFAULT_CONFIG.chunkThreshold) {
-    console.log('[Chunk Downloader] File < 1MB, using direct download');
     return await downloadDirect(url, fileSize, onProgress);
   } else {
-    console.log('[Chunk Downloader] File >= 1MB, using chunked download');
     return await downloadInChunks(url, fileSize, chunkSize, maxConcurrent, maxRetries, onProgress);
   }
 }
@@ -191,8 +186,6 @@ async function downloadInChunks(
     });
   }
 
-  console.log(`[Chunk Downloader] Split into ${chunks.length} chunks of ~${formatBytes(chunkSize)}`);
-
   // Initialize chunk status tracking
   const chunkStatuses: ChunkStatus[] = chunks.map((chunk) => ({
     index: chunk.index,
@@ -236,9 +229,7 @@ async function downloadInChunks(
   });
 
   // Merge chunks
-  console.log('[Chunk Downloader] Merging chunks...');
   const mergedBuffer = mergeChunks(results, fileSize);
-  console.log('[Chunk Downloader] Download complete:', formatBytes(mergedBuffer.byteLength));
 
   return mergedBuffer;
 }
@@ -266,7 +257,6 @@ async function downloadChunksWithConcurrency(
           onChunkProgress(chunk.index, loaded);
         });
         results[chunk.index] = buffer;
-        console.log(`[Chunk Downloader] Chunk ${chunk.index + 1}/${chunks.length} completed`);
       } catch (error) {
         throw new Error(`Chunk ${chunk.index} failed: ${error instanceof Error ? error.message : String(error)}`);
       }
@@ -365,7 +355,6 @@ async function downloadChunkWithRetry(
       if (attempt < maxRetries - 1) {
         // Exponential backoff: 1s, 2s, 4s
         const delay = Math.pow(2, attempt) * 1000;
-        console.log(`[Chunk Downloader] Retry ${attempt + 1}/${maxRetries} for bytes ${start}-${end} after ${delay}ms`);
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
@@ -390,15 +379,4 @@ function mergeChunks(chunks: ArrayBuffer[], totalSize: number): ArrayBuffer {
   }
 
   return result.buffer;
-}
-
-/**
- * Format bytes to human-readable string
- */
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
 }

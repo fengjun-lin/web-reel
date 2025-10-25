@@ -57,8 +57,6 @@ export class WebReelRecorder {
       this.config.deviceId = UNKNOWN_DEVICE_ID;
     }
 
-    console.log('[Web-Reel] Welcome to Web-Reel user behavior recording tool');
-
     // Start setup
     this.setup();
   }
@@ -117,7 +115,6 @@ export class WebReelRecorder {
 
     // Mark as ready
     this.isReady = true;
-    console.log('[Web-Reel] Recording started successfully');
   }
 
   /**
@@ -154,8 +151,6 @@ export class WebReelRecorder {
         }
       },
     });
-
-    console.log(`[Web-Reel] Entry button initialized in ${isUploadMode ? 'upload' : 'download'} mode`);
   }
 
   /**
@@ -181,7 +176,6 @@ export class WebReelRecorder {
     });
 
     this.networkInterceptor.install();
-    console.log('[Web-Reel] Network interceptor initialized');
   }
 
   /**
@@ -223,7 +217,6 @@ export class WebReelRecorder {
                 await this.db.delete(evt.id, DB_TABLE_NAME.RENDER_EVENT);
               }
 
-              console.log(`[Web-Reel] Cleaned up ${eventsToDelete.length} old events (keeping last ${MAX_EVENTS})`);
               eventCount = MAX_EVENTS;
             }
           } catch (error) {
@@ -268,8 +261,6 @@ export class WebReelRecorder {
           // Silently ignore errors
         });
     };
-
-    console.log('[Web-Reel] rrweb recording initialized with console plugin');
   }
 
   /**
@@ -278,8 +269,6 @@ export class WebReelRecorder {
   private initializeURLInterceptor(): void {
     this.urlInterceptor = new URLInterceptor({
       onURLChange: (url, trigger) => {
-        console.log(`[Web-Reel] URL changed (${trigger}): ${url}`);
-
         // Record URL change as custom event
         if (this.recordAddCustomEvent) {
           this.recordAddCustomEvent('url-change', {
@@ -292,7 +281,6 @@ export class WebReelRecorder {
     });
 
     this.urlInterceptor.install();
-    console.log('[Web-Reel] URL interceptor initialized');
   }
 
   /**
@@ -586,7 +574,6 @@ export class WebReelRecorder {
           // Delete uploaded data
           await this.db.deleteDataByIndexValue(DB_TABLE_NAME.RENDER_EVENT, DB_INDEX_KEY, sessionId);
           await this.db.deleteDataByIndexValue(DB_TABLE_NAME.RESPONSE_DATA, DB_INDEX_KEY, sessionId);
-          console.log(`[Web-Reel] Session ${sessionId} uploaded successfully`);
         }
       } catch (error) {
         console.error(`[Web-Reel] Failed to upload session ${sessionId}:`, error);
@@ -600,17 +587,14 @@ export class WebReelRecorder {
   public stop(): void {
     if (this.stopRecordingFn) {
       this.stopRecordingFn();
-      console.log('[Web-Reel] Recording stopped');
     }
 
     if (this.networkInterceptor) {
       this.networkInterceptor.uninstall();
-      console.log('[Web-Reel] Network interceptor uninstalled');
     }
 
     if (this.urlInterceptor) {
       this.urlInterceptor.uninstall();
-      console.log('[Web-Reel] URL interceptor uninstalled');
     }
 
     if (this.pollUploadFlagTimer) {
@@ -620,7 +604,6 @@ export class WebReelRecorder {
 
     if (this.entryButton) {
       this.entryButton.destroy();
-      console.log('[Web-Reel] Entry button destroyed');
     }
   }
 

@@ -72,12 +72,6 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
         return;
       }
 
-      console.log('[Replay] Session metadata fetched:', {
-        id: data.session.id,
-        file_size: data.session.file_size,
-        blob_url: data.session.blob_url,
-      });
-
       // Record start time when download actually begins
       let progressStartTime: number | null = null;
 
@@ -93,14 +87,12 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
           setDownloadProgress(progress);
         },
       });
-      console.log('[Replay] ZIP file downloaded, size:', blobBuffer.byteLength);
 
       // Ensure progress bar displays for at least 1.5 seconds from when it first showed
       if (progressStartTime !== null) {
         const elapsed = Date.now() - progressStartTime;
         const minDisplayTime = 1500; // 1.5 seconds
         if (elapsed < minDisplayTime) {
-          console.log(`[Replay] Waiting ${minDisplayTime - elapsed}ms to ensure progress bar visibility`);
           await new Promise((resolve) => setTimeout(resolve, minDisplayTime - elapsed));
         }
       }
@@ -115,7 +107,6 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
 
       // List all files in the ZIP
       const files = Object.keys(zipContent.files).filter((name) => !zipContent.files[name]?.dir);
-      console.log('[Replay] Files in ZIP:', files);
 
       // Try to find the JSON file - either 'data.json' or any .json file
       let jsonFile = zipContent.file('data.json');
@@ -124,7 +115,6 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
         // If data.json not found, look for any .json file
         const jsonFileName = files.find((name) => name.toLowerCase().endsWith('.json'));
         if (jsonFileName) {
-          console.log('[Replay] data.json not found, using:', jsonFileName);
           jsonFile = zipContent.file(jsonFileName);
         }
       }
@@ -136,18 +126,14 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
         return;
       }
 
-      console.log('[Replay] Reading JSON from ZIP...');
       const jsonText = await jsonFile.async('string');
-      console.log('[Replay] JSON text length:', jsonText.length);
       const collection: RecordCollection = JSON.parse(jsonText);
-      console.log('[Replay] Parsed collection, sessions:', Object.keys(collection).length);
 
       // Check if the collection is in the correct format or needs conversion
       let normalizedCollection: RecordCollection = collection;
 
       if ('eventData' in collection && Array.isArray(collection.eventData)) {
         // This is the old format, convert it
-        console.log('[Replay] Detected old format, converting...');
         const timestamp = String(Date.now());
         const eventData = collection.eventData as any[];
         const responseData = (Array.isArray(collection.responseData) ? collection.responseData : []) as HarEntry[];
@@ -157,11 +143,9 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
             responseData,
           },
         };
-        console.log('[Replay] Converted to new format with timestamp:', timestamp);
       }
 
       const sessionIds = Object.keys(normalizedCollection);
-      console.log('[Replay] Session IDs:', sessionIds);
 
       if (sessionIds.length === 0) {
         message.error('No sessions found in file');
@@ -171,7 +155,6 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
 
       // Load the most recent session
       const latestSessionId = sessionIds.sort((a, b) => parseInt(b, 10) - parseInt(a, 10))[0];
-      console.log('[Replay] Latest session ID:', latestSessionId);
 
       if (!latestSessionId) {
         message.error('No valid session ID found');
@@ -180,7 +163,6 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
       }
 
       const session = normalizedCollection[latestSessionId];
-      console.log('[Replay] Session eventData length:', session?.eventData?.length);
 
       if (!session) {
         message.error('Failed to parse session data');
@@ -252,13 +234,11 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
       // Check file type and handle accordingly
       if (file.name.toLowerCase().endsWith('.zip')) {
         // Handle ZIP file
-        console.log('[Upload] Processing ZIP file:', file.name);
         const zip = new JSZip();
         const zipContent = await zip.loadAsync(file);
 
         // List all files in the ZIP for debugging
         const files = Object.keys(zipContent.files).filter((name) => !zipContent.files[name]?.dir);
-        console.log('[Upload] Files in ZIP:', files);
 
         // Try to find the JSON file - either 'data.json' or any .json file
         let jsonFile = zipContent.file('data.json');
@@ -267,7 +247,6 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
           // If data.json not found, look for any .json file
           const jsonFileName = files.find((name) => name.toLowerCase().endsWith('.json'));
           if (jsonFileName) {
-            console.log('[Upload] data.json not found, using:', jsonFileName);
             jsonFile = zipContent.file(jsonFileName);
           }
         }
@@ -279,13 +258,8 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
           return false;
         }
 
-        console.log('[Upload] Reading JSON from ZIP...');
         const jsonText = await jsonFile.async('string');
-        console.log('[Upload] JSON text length:', jsonText.length);
         collection = JSON.parse(jsonText);
-        console.log('[Upload] Parsed collection, sessions:', Object.keys(collection).length);
-        console.log('[Upload] Collection keys:', Object.keys(collection));
-        console.log('[Upload] Collection structure:', collection);
       } else {
         // Handle JSON/TXT file
         const reader = new FileReader();
@@ -305,7 +279,6 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
 
       if ('eventData' in collection && Array.isArray(collection.eventData)) {
         // This is the old format from test page, convert it
-        console.log('[Upload] Detected old format, converting...');
         const timestamp = String(Date.now());
         const eventData = collection.eventData as any[];
         const responseData = (Array.isArray(collection.responseData) ? collection.responseData : []) as HarEntry[];
@@ -315,11 +288,9 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
             responseData,
           },
         };
-        console.log('[Upload] Converted to new format with timestamp:', timestamp);
       }
 
       const sessionIds = Object.keys(normalizedCollection);
-      console.log('[Upload] Session IDs:', sessionIds);
 
       if (sessionIds.length === 0) {
         message.error('No sessions found in file');
@@ -329,7 +300,6 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
 
       // Load the most recent session
       const latestSessionId = sessionIds.sort((a, b) => parseInt(b, 10) - parseInt(a, 10))[0];
-      console.log('[Upload] Latest session ID:', latestSessionId);
 
       if (!latestSessionId) {
         message.error('No valid session ID found');
@@ -338,9 +308,6 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
       }
 
       const session = normalizedCollection[latestSessionId];
-      console.log('[Upload] Session data:', session);
-      console.log('[Upload] Session eventData length:', session?.eventData?.length);
-      console.log('[Upload] Session responseData length:', session?.responseData?.length);
 
       if (!session) {
         message.error('Failed to parse session data');
@@ -349,7 +316,6 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
       }
 
       const eventData = session.eventData || [];
-      console.log('[Upload] Final eventData length:', eventData.length);
 
       setSessionData({
         eventData,

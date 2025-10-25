@@ -12,7 +12,6 @@ export async function initDB(projectName: string): Promise<IDB> {
   ]);
 
   await db.open();
-  console.log('[Web-Reel] IndexedDB initialized');
   return db;
 }
 
@@ -29,14 +28,8 @@ export async function cleanOldData(db: IDB, traceTime: number, recordInterval?: 
         ? traceTime - 1000 * 10 // Keep only last 10 seconds (don't delete too aggressively)
         : traceTime - ((recordInterval ?? 0) * 1000 * 60 * 60 * 24 || RESERVE_DURATION);
 
-  const totalRenderEvent = await db.count(DB_TABLE_NAME.RENDER_EVENT);
-  const totalResponseData = await db.count(DB_TABLE_NAME.RESPONSE_DATA);
-
-  const renderEventCount = await db.deleteDataByIndex(DB_TABLE_NAME.RENDER_EVENT, DB_INDEX_KEY, reserveTime);
-  const responseDataCount = await db.deleteDataByIndex(DB_TABLE_NAME.RESPONSE_DATA, DB_INDEX_KEY, reserveTime);
-
-  console.log(`[Web-Reel] Total count: ${totalRenderEvent} render events, ${totalResponseData} response data`);
-  console.log(`[Web-Reel] Deleted count: ${renderEventCount} render events, ${responseDataCount} response data`);
+  await db.deleteDataByIndex(DB_TABLE_NAME.RENDER_EVENT, DB_INDEX_KEY, reserveTime);
+  await db.deleteDataByIndex(DB_TABLE_NAME.RESPONSE_DATA, DB_INDEX_KEY, reserveTime);
 }
 
 /**
@@ -81,5 +74,4 @@ export async function getAllSessionIds(db: IDB): Promise<number[]> {
 export async function deleteSession(db: IDB, sessionId: number): Promise<void> {
   await db.deleteDataByIndexValue(DB_TABLE_NAME.RENDER_EVENT, DB_INDEX_KEY, sessionId);
   await db.deleteDataByIndexValue(DB_TABLE_NAME.RESPONSE_DATA, DB_INDEX_KEY, sessionId);
-  console.log(`[Web-Reel] Deleted session: ${sessionId}`);
 }

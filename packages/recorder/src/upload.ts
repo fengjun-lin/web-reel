@@ -35,8 +35,6 @@ export async function uploadSession(
   options: UploadOptions,
 ): Promise<UploadResponse> {
   try {
-    console.log('[Upload] Preparing session data for upload...');
-
     // Combine event data and response data by session
     const collection: { [key: string]: { eventData: any[]; responseData: HarEntry[] } } = {};
 
@@ -47,20 +45,14 @@ export async function uploadSession(
       };
     });
 
-    console.log('[Upload] Converting to JSON...');
-
     let json: string;
     try {
       json = JSON.stringify(collection, null, 2);
-      const sizeInMB = (new Blob([json]).size / 1024 / 1024).toFixed(2);
-      console.log(`[Upload] JSON created (${sizeInMB} MB)`);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       console.error('[Upload] JSON.stringify failed:', errorMsg);
       throw new Error(`Failed to serialize session data: ${errorMsg}`);
     }
-
-    console.log('[Upload] Compressing to ZIP...');
 
     // Create zip file
     const zip = new JSZip();
@@ -83,12 +75,9 @@ export async function uploadSession(
       },
     );
 
-    const zipSizeInMB = (zipBlob.size / 1024 / 1024).toFixed(2);
-    const compressionRatio = ((1 - zipBlob.size / new Blob([json]).size) * 100).toFixed(1);
-    console.log(`[Upload] ZIP created (${zipSizeInMB} MB, ${compressionRatio}% compression)`);
-
     // Validate file size (20MB max as per API spec)
     const maxSize = 20 * 1024 * 1024;
+    const zipSizeInMB = (zipBlob.size / 1024 / 1024).toFixed(2);
     if (zipBlob.size > maxSize) {
       throw new Error(`File size exceeds maximum allowed size of 20MB (got ${zipSizeInMB}MB)`);
     }
@@ -107,8 +96,6 @@ export async function uploadSession(
     if (options.jiraId) {
       formData.append('jira_id', options.jiraId);
     }
-
-    console.log(`[Upload] Uploading to ${options.endpoint}...`);
 
     // Upload to server with progress tracking using XMLHttpRequest
     const xhr = new XMLHttpRequest();
@@ -175,8 +162,6 @@ export async function uploadSession(
 
     // Wait for upload to complete
     const response = await uploadPromise;
-
-    console.log('[Upload] Upload completed successfully:', response);
 
     if (options.onSuccess) {
       options.onSuccess(response);

@@ -27,13 +27,9 @@ export async function exportToFile(
       };
     });
 
-    console.log('[Export] Converting to JSON...');
-
     let json: string;
     try {
       json = JSON.stringify(collection, null, 2);
-      const sizeInMB = (new Blob([json]).size / 1024 / 1024).toFixed(2);
-      console.log(`[Export] ✓ JSON created (${sizeInMB} MB)`);
     } catch (error) {
       console.error('[Export] ❌ JSON.stringify failed:', error instanceof Error ? error.message : String(error));
       throw error;
@@ -52,8 +48,6 @@ export async function exportToFile(
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-
-    console.log('[Export] ✅ Export completed');
   } catch (error) {
     console.error('[Export] ❌ Export failed:', error);
     throw error;
@@ -92,8 +86,6 @@ export async function exportToZip(
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-
-    console.log('[Export] Session data exported as ZIP successfully');
   } catch (error) {
     console.error('[Export] Failed to export ZIP:', error);
     throw error;
