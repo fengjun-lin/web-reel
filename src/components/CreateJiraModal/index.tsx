@@ -25,6 +25,7 @@ interface CreateJiraModalProps {
   logs?: LogInfo[];
   requests?: HarEntry[];
   onJiraCreated?: (_issueKey: string) => void;
+  pageUrl?: string;
 }
 
 export default function CreateJiraModal({
@@ -34,6 +35,7 @@ export default function CreateJiraModal({
   logs = [],
   requests = [],
   onJiraCreated,
+  pageUrl,
 }: CreateJiraModalProps) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -105,6 +107,7 @@ export default function CreateJiraModal({
         logLimit: 100,
         requestLimit: 50,
         includeStackTrace: false, // Reduce token usage
+        pageUrl,
       });
 
       const prompt = buildJiraCompactPrompt(data);
@@ -224,6 +227,7 @@ export default function CreateJiraModal({
   const initialValues = {
     summary: `Bug Report: Session ${sessionId || 'Unknown'}`,
     description: `h3. Environment
+*URL:* ${pageUrl ? `[${pageUrl}]` : 'N/A'}
 
 h3. Precondition
 
@@ -234,7 +238,7 @@ h3. Expected result
 h3. Actual result
 
 h3. Replay URL
-${replayUrl}
+${replayUrl ? `[${replayUrl}]` : ''}
 `,
   };
 
@@ -402,6 +406,7 @@ function formatAIResultToDescription(
   // Environment Section
   sections.push(`h3. Environment`);
   sections.push(`*Session ID:* ${sessionId || 'Unknown'}`);
+  sections.push(`*URL:* ${data.pageUrl ? `[${data.pageUrl}]` : 'N/A'}`);
   sections.push(`*Issue Type:* ${aiResult.type || 'Unknown'}`);
   if (aiResult.labels && aiResult.labels.length > 0) {
     sections.push(`*Labels:* ${aiResult.labels.join(', ')}`);
@@ -419,7 +424,9 @@ function formatAIResultToDescription(
   sections.push(`h3. Steps`);
   if (aiResult.evidence && aiResult.evidence.length > 0) {
     aiResult.evidence.forEach((item) => {
-      sections.push(`# ${item}`);
+      // Ensure item is a string (handle case where AI returns objects)
+      const evidenceText = typeof item === 'string' ? item : JSON.stringify(item);
+      sections.push(`# ${evidenceText}`);
     });
   } else if (data.errors.length > 0 || data.networkErrors.length > 0) {
     if (data.errors.length > 0 && data.errors[0]) {
@@ -472,7 +479,7 @@ function formatAIResultToDescription(
   if (sessionId) {
     sections.push('');
     sections.push(`h3. Replay URL`);
-    sections.push(`https://tubi-web-reel.vercel.app/replayer/${sessionId}`);
+    sections.push(`[https://tubi-web-reel.vercel.app/replayer/${sessionId}]`);
   }
 
   return sections.join('\n');

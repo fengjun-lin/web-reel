@@ -641,11 +641,13 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
           {sessionId && <Text type="secondary">Session ID: {sessionId}</Text>}
         </div>
         <Space>
-          <Upload beforeUpload={handleUpload} accept=".json,.txt,.zip" showUploadList={false}>
-            <Button type="primary" icon={<InboxOutlined />} loading={loading}>
-              Upload Session File
-            </Button>
-          </Upload>
+          {!sessionData && (
+            <Upload beforeUpload={handleUpload} accept=".json,.txt,.zip" showUploadList={false}>
+              <Button type="primary" icon={<InboxOutlined />} loading={loading}>
+                Upload Session File
+              </Button>
+            </Upload>
+          )}
           {jiraId ? (
             <Button type="default" onClick={() => window.open(`https://${jiraDomain}/browse/${jiraId}`, '_blank')}>
               View Jira: {jiraId}
@@ -863,6 +865,7 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
         logs={consoleLogs}
         requests={sessionData?.responseData || []}
         onJiraCreated={(issueKey) => setJiraId(issueKey)}
+        pageUrl={currentUrl}
       />
     </Space>
   );

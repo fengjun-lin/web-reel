@@ -31,6 +31,7 @@ export interface AnalysisData {
   networkErrors: NetworkErrorInfo[];
   timeline: string;
   sessionStartTime: number; // Add session start time for relative time calculation
+  pageUrl?: string; // The actual page URL from the session
   summary: {
     totalLogs: number;
     totalRequests: number;
@@ -51,9 +52,10 @@ export function prepareAnalysisData(
     logLimit?: number;
     requestLimit?: number;
     includeStackTrace?: boolean;
+    pageUrl?: string;
   } = {},
 ): AnalysisData {
-  const { logLimit = 1000, requestLimit = 500, includeStackTrace = true } = options;
+  const { logLimit = 1000, requestLimit = 500, includeStackTrace = true, pageUrl } = options;
 
   // Extract all errors and warnings (don't limit these - they're most important)
   const errors: ErrorInfo[] = [];
@@ -115,6 +117,7 @@ export function prepareAnalysisData(
     networkErrors,
     timeline,
     sessionStartTime,
+    pageUrl,
     summary: {
       totalLogs: logs.length,
       totalRequests: requests.length,
