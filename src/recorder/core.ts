@@ -578,9 +578,16 @@ export class WebReelRecorder {
           // Delete uploaded data
           await this.db.deleteDataByIndexValue(DB_TABLE_NAME.RENDER_EVENT, DB_INDEX_KEY, sessionId);
           await this.db.deleteDataByIndexValue(DB_TABLE_NAME.RESPONSE_DATA, DB_INDEX_KEY, sessionId);
+        } else {
+          // Upload API returned an error
+          const errorMsg = `[Web-Reel] Session upload failed: API returned error code ${uploadResult.errNo}`;
+          alert(`❌ ${errorMsg}`);
         }
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error(`[Web-Reel] Failed to upload session ${sessionId}:`, error);
+        // Show user-friendly error notification
+        alert(`❌ Failed to upload session ${sessionId}: ${errorMessage}`);
       }
     }
   }
