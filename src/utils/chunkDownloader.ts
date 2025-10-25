@@ -225,10 +225,14 @@ async function downloadInChunks(
 
   // Download chunks with concurrency control
   const results = await downloadChunksWithConcurrency(chunks, maxConcurrent, maxRetries, url, (index, loaded) => {
-    chunkStatuses[index].loaded = loaded;
-    chunkStatuses[index].status = loaded === chunks[index].end - chunks[index].start + 1 ? 'completed' : 'downloading';
-    totalLoaded = chunkStatuses.reduce((sum, chunk) => sum + chunk.loaded, 0);
-    updateProgress();
+    const chunkStatus = chunkStatuses[index];
+    const chunk = chunks[index];
+    if (chunkStatus && chunk) {
+      chunkStatus.loaded = loaded;
+      chunkStatus.status = loaded === chunk.end - chunk.start + 1 ? 'completed' : 'downloading';
+      totalLoaded = chunkStatuses.reduce((sum, c) => sum + c.loaded, 0);
+      updateProgress();
+    }
   });
 
   // Merge chunks

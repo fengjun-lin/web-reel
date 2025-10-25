@@ -46,15 +46,6 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
   const [urlHistory, setUrlHistory] = useState<Array<{ url: string; timestamp: number; trigger: string }>>([]);
   const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
   const [showProgress, setShowProgress] = useState(false);
-  const downloadTimersRef = useRef<{
-    showDelay: ReturnType<typeof setTimeout> | null;
-    hideDelay: ReturnType<typeof setTimeout> | null;
-    startTime: number | null;
-  }>({
-    showDelay: null,
-    hideDelay: null,
-    startTime: null,
-  });
 
   // Load session from sessionStorage on mount (only if sessionId is provided)
   useEffect(() => {
@@ -64,28 +55,10 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
-  // Cleanup timers on unmount
-  useEffect(() => {
-    const timers = downloadTimersRef.current;
-    return () => {
-      if (timers.showDelay) {
-        clearTimeout(timers.showDelay);
-      }
-      if (timers.hideDelay) {
-        clearTimeout(timers.hideDelay);
-      }
-    };
-  }, []);
-
   const loadSessionById = async (id: string) => {
     try {
       setLoading(true);
-      downloadTimersRef.current.startTime = Date.now();
-
-      // Set delay timer to show progress bar after 300ms
-      downloadTimersRef.current.showDelay = setTimeout(() => {
-        setShowProgress(true);
-      }, 300);
+      setShowProgress(true); // Show progress immediately
 
       // Fetch session metadata from API
       const response = await fetch(`/api/sessions/${id}`);
@@ -94,10 +67,6 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
       if (!data.success || !data.session) {
         message.error('Session not found');
         setLoading(false);
-        // Clear timers
-        if (downloadTimersRef.current.showDelay) {
-          clearTimeout(downloadTimersRef.current.showDelay);
-        }
         setShowProgress(false);
         setDownloadProgress(null);
         return;
@@ -109,26 +78,31 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
         blob_url: data.session.blob_url,
       });
 
+      // Record start time when download actually begins
+      let progressStartTime: number | null = null;
+
       // Download ZIP file from Vercel Blob using chunked downloader
       const blobBuffer = await downloadWithChunks({
         url: data.session.blob_url,
         fileSize: data.session.file_size,
         onProgress: (progress) => {
+          // Record the first time progress is shown
+          if (progressStartTime === null) {
+            progressStartTime = Date.now();
+          }
           setDownloadProgress(progress);
         },
       });
       console.log('[Replay] ZIP file downloaded, size:', blobBuffer.byteLength);
 
-      // Download completed - clear show delay timer
-      if (downloadTimersRef.current.showDelay) {
-        clearTimeout(downloadTimersRef.current.showDelay);
-      }
-
-      // If progress bar is shown, ensure it displays for at least 800ms
-      const elapsed = Date.now() - (downloadTimersRef.current.startTime || 0);
-      if (showProgress && elapsed < 800) {
-        console.log(`[Replay] Progress shown, waiting ${800 - elapsed}ms before hiding`);
-        await new Promise((resolve) => setTimeout(resolve, 800 - elapsed));
+      // Ensure progress bar displays for at least 1.5 seconds from when it first showed
+      if (progressStartTime !== null) {
+        const elapsed = Date.now() - progressStartTime;
+        const minDisplayTime = 1500; // 1.5 seconds
+        if (elapsed < minDisplayTime) {
+          console.log(`[Replay] Waiting ${minDisplayTime - elapsed}ms to ensure progress bar visibility`);
+          await new Promise((resolve) => setTimeout(resolve, minDisplayTime - elapsed));
+        }
       }
 
       // Clear download progress after minimum display time
@@ -228,14 +202,6 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
       message.success(`Session ${id} loaded successfully`);
     } catch (error) {
       console.error('Failed to load session:', error);
-
-      // Clear all timers on error
-      if (downloadTimersRef.current.showDelay) {
-        clearTimeout(downloadTimersRef.current.showDelay);
-      }
-      if (downloadTimersRef.current.hideDelay) {
-        clearTimeout(downloadTimersRef.current.hideDelay);
-      }
 
       // Clear progress states
       setShowProgress(false);
@@ -723,7 +689,7 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
         />
       )}
 
-      {loading && showProgress && downloadProgress && (
+      {showProgress && downloadProgress && (
         <Card>
           <Space direction="vertical" size="small" style={{ width: '100%' }}>
             <Text strong>Downloading session file...</Text>
