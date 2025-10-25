@@ -413,6 +413,8 @@ export class WebReelRecorder {
         },
         onError: (error) => {
           console.error('[Web-Reel Upload] ❌ Upload failed:', error);
+          // Show error notification to user
+          alert(`❌ Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
         },
       };
 
@@ -431,7 +433,10 @@ export class WebReelRecorder {
         }
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       console.error('[Web-Reel Upload] ❌ Upload failed:', error);
+      // Show user-friendly error notification
+      alert(`❌ Failed to upload session data: ${errorMessage}`);
       throw error;
     }
   }
