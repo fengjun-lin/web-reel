@@ -294,13 +294,13 @@ export function buildAnalysisPrompt(data: AnalysisData): string {
       sections.push(`
 ### Error ${index + 1} ${index === 0 ? '⚠️ (Most Recent)' : ''}
 
-**🎯 Player Time:** [${relativeTime}](#seek:${error.timestamp}) *(click to seek)*
+**🎯 Seekable Link:** [${relativeTime}](#seek:${error.timestamp})
 
 **Message:** ${error.message}
 
 **Occurred At:** ${timeStr}
 
-**Timestamp (for reference):** ${error.timestamp}ms${
+**Raw Timestamp:** ${error.timestamp} (use this exact value for seek links)${
         error.stack ? `\n\n**Stack Trace:**\n\`\`\`\n${error.stack}\n\`\`\`` : ''
       }`);
     });
@@ -312,15 +312,33 @@ export function buildAnalysisPrompt(data: AnalysisData): string {
 
   // Console Warnings (already sorted newest first)
   if (data.warnings.length > 0) {
-    sections.push(`\n## Console Warnings (${data.warnings.length} total, showing most recent)`);
+    sections.push(`\n## Console Warnings (${data.warnings.length} total, showing most recent first)`);
 
     // Show top 5 most recent warnings
     const topWarnings = data.warnings.slice(0, 5);
     topWarnings.forEach((warning, index) => {
+      const timestamp = new Date(warning.timestamp);
       const relativeTime = formatRelativeTime(warning.timestamp, data.sessionStartTime);
-      sections.push(
-        `${index + 1}. [${relativeTime}](#seek:${warning.timestamp}) - ${warning.message.slice(0, 180)}${warning.message.length > 180 ? '...' : ''}`,
-      );
+      const timeStr = timestamp.toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      });
+
+      sections.push(`
+### Warning ${index + 1} ${index === 0 ? '⚠️ (Most Recent)' : ''}
+
+**🎯 Seekable Link:** [${relativeTime}](#seek:${warning.timestamp})
+
+**Message:** ${warning.message.slice(0, 300)}${warning.message.length > 300 ? '...' : ''}
+
+**Occurred At:** ${timeStr}
+
+**Raw Timestamp:** ${warning.timestamp} (use this exact value for seek links)`);
     });
 
     if (data.warnings.length > 5) {
@@ -349,7 +367,7 @@ export function buildAnalysisPrompt(data: AnalysisData): string {
       sections.push(`
 ### Request ${index + 1} ${index === 0 ? '⚠️ (Most Recent)' : ''}
 
-**🎯 Player Time:** [${relativeTime}](#seek:${error.timestamp}) *(click to seek)*
+**🎯 Seekable Link:** [${relativeTime}](#seek:${error.timestamp})
 
 **URL:** ${error.url}
 
@@ -357,7 +375,7 @@ export function buildAnalysisPrompt(data: AnalysisData): string {
 
 **Occurred At:** ${timeStr}
 
-**Timestamp (for reference):** ${error.timestamp}ms${
+**Raw Timestamp:** ${error.timestamp} (use this exact value for seek links)${
         error.responseBody ? `\n\n**Response Body:**\n\`\`\`\n${error.responseBody}\n\`\`\`` : ''
       }`);
     });
@@ -378,45 +396,57 @@ Analyze this session to determine **likely root causes** of the most recent issu
 - **Each error includes a timestamp** - use this to understand the sequence of events
 - Focus your analysis on the **most recent problems** as they represent the current state
 
-**CRITICAL - Timestamp Format Instructions**:
-When referencing specific errors in your analysis, you MUST use this exact format for timestamps:
-- Format: "Error at [HH:MM:SS](#seek:TIMESTAMP_IN_MS) 🎯"
-- Example: "Error at [13:03:17](#seek:1729678997000) 🎯"
-- The timestamp should link to the exact millisecond timestamp using the #seek: format
-- Always include the 🎯 emoji after seekable timestamps
-- Extract the exact timestamp from the "Occurred At" field and convert to milliseconds
+**CRITICAL - How to Create Seekable Links**:
+Each error/request above includes a "Raw Timestamp" field. When referencing errors in your analysis:
+1. Look for the **"Raw Timestamp:"** line (e.g., "Raw Timestamp: 1729678997000")
+2. Copy the EXACT number shown
+3. Create a link using this format: [HH:MM:SS](#seek:EXACT_TIMESTAMP_NUMBER) 🎯
+4. Example from the data: If you see "Raw Timestamp: 1729678997000", use [21:13:17](#seek:1729678997000) 🎯
+
+**You can also copy the existing "Seekable Link" shown above each error.**
+
+IMPORTANT: Always use the EXACT timestamp number from "Raw Timestamp:" field - do NOT modify or round it.
 
 Please analyze this session data and provide:
 
 1. **Root Cause Analysis**: 
    - What is the most likely root cause of the **most recent issues**? 
-   - **Use clickable timestamp links** when discussing specific errors (e.g., "The error at [13:45:23](#seek:1729679123000) 🎯...")
+   - **Copy the "Seekable Link" from the error above or use the Raw Timestamp** when discussing specific errors
+   - Example: "The error at [21:13:20](#seek:1729678997000) 🎯 shows..."
    - Focus on the primary error or failure point that occurred most recently
 
 2. **Error Correlation**: 
    - Are the recent errors related to each other? 
    - What is the chain of causation? Did earlier errors lead to later ones?
-   - **Use clickable timestamps to show the sequence** (e.g., "Error A at [13:45:20](#seek:1729679120000) 🎯 likely caused Error B at [13:45:23](#seek:1729679123000) 🎯")
+   - **Copy the exact seekable links from above to show the sequence**
+   - Example: "Error at [21:13:20](#seek:1729678997000) 🎯 likely caused the issue at [21:13:22](#seek:1729678999000) 🎯"
 
 3. **Impact Assessment**: 
    - Which errors are critical (block user workflow)?
    - Which are warnings or minor issues?
    - What functionality is affected?
-   - **Use clickable timestamp links for critical errors**
+   - **Include seekable links for critical errors using the Raw Timestamp values**
 
 4. **Fix Suggestions**: Provide concrete, actionable steps to fix the issues:
    - Code changes needed
    - Configuration adjustments
    - API fixes
    - **Focus on fixes for the most recent problems**
-   - **Include clickable timestamps when referencing which error needs fixing**
+   - **Reference errors using their seekable links (copy from above)**
    
 5. **Prevention**: How can we prevent similar issues in the future?
    - Code improvements
    - Better error handling
    - Monitoring/alerts
 
-Format your response in clear markdown with sections. **IMPORTANT: When referencing specific errors, always use clickable timestamp links in the format [HH:MM:SS](#seek:timestamp) 🎯** for clarity and to allow users to jump to that exact moment in the replay. Focus on being practical and actionable for developers.`);
+**Final Reminder**: When writing your analysis, you can simply COPY the "Seekable Link" shown above each error. For example, if Error 1 shows:
+\`\`\`
+**🎯 Seekable Link:** [21:13:20](#seek:1729678997000)
+\`\`\`
+
+Just copy and paste \`[21:13:20](#seek:1729678997000) 🎯\` directly into your response when discussing that error.
+
+Format your response in clear markdown with sections. Focus on being practical and actionable for developers.`);
 
   return sections.join('\n');
 }

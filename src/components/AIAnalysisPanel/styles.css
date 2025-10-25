@@ -18,7 +18,9 @@
 .ai-analysis-content-wrapper {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   min-height: 0; /* Important for flex scrolling */
+  max-height: 680px; /* Ensure scrolling works */
 }
 
 .ai-analysis-empty {
@@ -40,6 +42,8 @@
   background: #fff;
   margin: 0;
   text-align: left; /* Ensure all content is left-aligned */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .ai-analysis-content h1,
@@ -148,6 +152,9 @@
   margin: 10px 0;
   font-size: 13px;
   line-height: 1.5;
+  max-width: 100%;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
 .ai-analysis-content pre code {

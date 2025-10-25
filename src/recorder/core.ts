@@ -346,7 +346,6 @@ export class WebReelRecorder {
 
     // Clear exported data after successful export
     if (clearAfterExport) {
-      console.log('[Web-Reel Export] Clearing data...');
       try {
         await this.db.clearTable(DB_TABLE_NAME.RENDER_EVENT);
         await this.db.clearTable(DB_TABLE_NAME.RESPONSE_DATA);

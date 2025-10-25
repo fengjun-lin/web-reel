@@ -595,15 +595,32 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
         const startTime = sessionData.eventData[0]?.timestamp || 0;
         const timeOffset = timestamp - startTime;
 
-        console.log('[Replay] Seeking to timestamp:', timestamp, 'start:', startTime, 'offset:', timeOffset, 'ms');
+        console.log('[Replay] Seek request:', {
+          targetTimestamp: timestamp,
+          sessionStartTime: startTime,
+          calculatedOffset: timeOffset,
+          targetDate: new Date(timestamp).toISOString(),
+          sessionStartDate: new Date(startTime).toISOString(),
+        });
+
+        // Validate offset
+        if (timeOffset < 0) {
+          console.warn('[Replay] Negative offset detected, timestamp is before session start');
+          message.warning('The requested time is before the session started');
+          return;
+        }
 
         // Use player.goto method which is the correct way to seek in rrweb-player
         player.goto(timeOffset, false); // false = pause after seeking
         setCurrentTime(timestamp);
+
+        console.log('[Replay] Seek completed successfully');
       } catch (error) {
         console.error('[Replay] Failed to seek:', error);
         message.error('Failed to seek to the specified time');
       }
+    } else {
+      console.warn('[Replay] Cannot seek: player or sessionData not available');
     }
   };
 
@@ -835,6 +852,7 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
                           requests={sessionData.responseData}
                           onOpenSettings={() => setShowSettings(true)}
                           onSeekToTime={handleSeekToTime}
+                          pageUrl={currentUrl}
                         />
                       </div>
                     ),

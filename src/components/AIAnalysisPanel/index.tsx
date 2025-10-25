@@ -23,9 +23,16 @@ interface AIAnalysisPanelProps {
   requests: HarEntry[];
   onOpenSettings?: () => void;
   onSeekToTime?: (_timestamp: number) => void;
+  pageUrl?: string;
 }
 
-export default function AIAnalysisPanel({ logs, requests, onOpenSettings, onSeekToTime }: AIAnalysisPanelProps) {
+export default function AIAnalysisPanel({
+  logs,
+  requests,
+  onOpenSettings,
+  onSeekToTime,
+  pageUrl,
+}: AIAnalysisPanelProps) {
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<string>('');
   const [error, setError] = useState<string>('');
@@ -62,11 +69,15 @@ export default function AIAnalysisPanel({ logs, requests, onOpenSettings, onSeek
       if (target.tagName === 'A' && target.getAttribute('href')?.startsWith('#seek:')) {
         e.preventDefault();
         const href = target.getAttribute('href');
+        console.log('[AI Analysis] Seek link clicked:', { href, linkText: target.textContent });
         if (href) {
           const timestamp = parseInt(href.replace('#seek:', ''), 10);
+          console.log('[AI Analysis] Parsed timestamp:', timestamp, 'Date:', new Date(timestamp).toISOString());
           if (!isNaN(timestamp) && onSeekToTime) {
             onSeekToTime(timestamp);
             message.success(`Seeking to ${target.textContent}`);
+          } else {
+            console.error('[AI Analysis] Invalid timestamp:', { href, timestamp });
           }
         }
       }
@@ -93,6 +104,7 @@ export default function AIAnalysisPanel({ logs, requests, onOpenSettings, onSeek
         logLimit: 1000,
         requestLimit: 500,
         includeStackTrace: true,
+        pageUrl,
       });
 
       // Check if there are any errors to analyze
