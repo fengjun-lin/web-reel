@@ -1,7 +1,7 @@
 'use client';
 
 import { InboxOutlined } from '@ant-design/icons';
-import { Alert, Button, Card, Modal, Space, Tabs, Typography, Upload, message } from 'antd';
+import { Alert, Button, Card, Modal, Progress, Space, Tabs, Typography, Upload, message } from 'antd';
 import type { UploadProps } from 'antd';
 import JSZip from 'jszip';
 import { useEffect, useRef, useState } from 'react';
@@ -17,6 +17,7 @@ import OpenAISettings from '@/components/OpenAISettings';
 import type { RecordCollection } from '@/recorder';
 import type { LogInfo } from '@/types';
 import type { HarEntry } from '@/types/har';
+import { downloadWithChunks, type DownloadProgress } from '@/utils/chunkDownloader';
 
 const { Title, Text } = Typography;
 const { Dragger } = Upload;
@@ -43,6 +44,17 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
   const [showJiraModal, setShowJiraModal] = useState(false);
   const [currentUrl, setCurrentUrl] = useState<string>('');
   const [urlHistory, setUrlHistory] = useState<Array<{ url: string; timestamp: number; trigger: string }>>([]);
+  const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
+  const [showProgress, setShowProgress] = useState(false);
+  const downloadTimersRef = useRef<{
+    showDelay: NodeJS.Timeout | null;
+    hideDelay: NodeJS.Timeout | null;
+    startTime: number | null;
+  }>({
+    showDelay: null,
+    hideDelay: null,
+    startTime: null,
+  });
 
   // Load session from sessionStorage on mount (only if sessionId is provided)
   useEffect(() => {
@@ -52,9 +64,27 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (downloadTimersRef.current.showDelay) {
+        clearTimeout(downloadTimersRef.current.showDelay);
+      }
+      if (downloadTimersRef.current.hideDelay) {
+        clearTimeout(downloadTimersRef.current.hideDelay);
+      }
+    };
+  }, []);
+
   const loadSessionById = async (id: string) => {
     try {
       setLoading(true);
+      downloadTimersRef.current.startTime = Date.now();
+
+      // Set delay timer to show progress bar after 300ms
+      downloadTimersRef.current.showDelay = setTimeout(() => {
+        setShowProgress(true);
+      }, 300);
 
       // Fetch session metadata from API
       const response = await fetch(`/api/sessions/${id}`);
@@ -63,6 +93,12 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
       if (!data.success || !data.session) {
         message.error('Session not found');
         setLoading(false);
+        // Clear timers
+        if (downloadTimersRef.current.showDelay) {
+          clearTimeout(downloadTimersRef.current.showDelay);
+        }
+        setShowProgress(false);
+        setDownloadProgress(null);
         return;
       }
 
@@ -72,14 +108,31 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
         blob_url: data.session.blob_url,
       });
 
-      // Fetch ZIP file from Vercel Blob
-      const blobResponse = await fetch(data.session.blob_url);
-      if (!blobResponse.ok) {
-        throw new Error(`Failed to fetch session file: ${blobResponse.statusText}`);
+      // Download ZIP file from Vercel Blob using chunked downloader
+      const blobBuffer = await downloadWithChunks({
+        url: data.session.blob_url,
+        fileSize: data.session.file_size,
+        onProgress: (progress) => {
+          setDownloadProgress(progress);
+        },
+      });
+      console.log('[Replay] ZIP file downloaded, size:', blobBuffer.byteLength);
+
+      // Download completed - clear show delay timer
+      if (downloadTimersRef.current.showDelay) {
+        clearTimeout(downloadTimersRef.current.showDelay);
       }
 
-      const blobBuffer = await blobResponse.arrayBuffer();
-      console.log('[Replay] ZIP file fetched, size:', blobBuffer.byteLength);
+      // If progress bar is shown, ensure it displays for at least 800ms
+      const elapsed = Date.now() - (downloadTimersRef.current.startTime || 0);
+      if (showProgress && elapsed < 800) {
+        console.log(`[Replay] Progress shown, waiting ${800 - elapsed}ms before hiding`);
+        await new Promise((resolve) => setTimeout(resolve, 800 - elapsed));
+      }
+
+      // Clear download progress after minimum display time
+      setShowProgress(false);
+      setDownloadProgress(null);
 
       // Unzip and process (using existing logic)
       const zip = new JSZip();
@@ -174,7 +227,39 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
       message.success(`Session ${id} loaded successfully`);
     } catch (error) {
       console.error('Failed to load session:', error);
-      message.error(`Failed to load session: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      // Clear all timers on error
+      if (downloadTimersRef.current.showDelay) {
+        clearTimeout(downloadTimersRef.current.showDelay);
+      }
+      if (downloadTimersRef.current.hideDelay) {
+        clearTimeout(downloadTimersRef.current.hideDelay);
+      }
+      
+      // Clear progress states
+      setShowProgress(false);
+      setDownloadProgress(null);
+      
+      // Friendly error handling
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      if (errorMessage.includes('network') || errorMessage.includes('fetch') || errorMessage.includes('Failed to download')) {
+        // Network-related errors - offer retry
+        message.error({
+          content: (
+            <span>
+              Network error while downloading session. <a onClick={() => {
+                message.destroy();
+                loadSessionById(id);
+              }} style={{ textDecoration: 'underline', cursor: 'pointer' }}>Click here to retry</a>
+            </span>
+          ),
+          duration: 10,
+        });
+      } else {
+        message.error(`Failed to load session: ${errorMessage}`);
+      }
+      
       setHasError(true);
     } finally {
       setLoading(false);
@@ -576,6 +661,28 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
     return new Date(timestamp).toLocaleString();
   };
 
+  // Format bytes to human-readable string
+  const formatBytes = (bytes: number): string => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
+  };
+
+  // Format speed in bytes/s to human-readable string
+  const formatSpeed = (bytesPerSec: number): string => {
+    return `${formatBytes(bytesPerSec)}/s`;
+  };
+
+  // Format seconds to human-readable duration string
+  const formatDuration = (seconds: number): string => {
+    if (seconds < 60) return `${Math.round(seconds)}s`;
+    const minutes = Math.floor(seconds / 60);
+    const secs = Math.round(seconds % 60);
+    return `${minutes}m ${secs}s`;
+  };
+
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -603,6 +710,29 @@ export default function ReplayerContent({ sessionId }: ReplayerContentProps) {
           closable
           onClose={() => setHasError(false)}
         />
+      )}
+
+      {loading && showProgress && downloadProgress && (
+        <Card>
+          <Space direction="vertical" size="small" style={{ width: '100%' }}>
+            <Text strong>Downloading session file...</Text>
+            <Progress 
+              percent={Math.round(downloadProgress.percentage)} 
+              status="active"
+              format={(percent) => `${percent}%`}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Text type="secondary">
+                {formatBytes(downloadProgress.loaded)} / {formatBytes(downloadProgress.total)}
+              </Text>
+              <Text type="secondary">
+                {formatSpeed(downloadProgress.speed)}
+                {downloadProgress.remainingTime > 0 && downloadProgress.remainingTime < 3600 && 
+                  ` • ${formatDuration(downloadProgress.remainingTime)} remaining`}
+              </Text>
+            </div>
+          </Space>
+        </Card>
       )}
 
       {!sessionData && !loading && (
