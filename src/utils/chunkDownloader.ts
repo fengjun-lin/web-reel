@@ -258,6 +258,7 @@ async function downloadChunksWithConcurrency(
 
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i];
+    if (!chunk) continue; // Type guard
 
     const downloadTask = (async () => {
       try {
