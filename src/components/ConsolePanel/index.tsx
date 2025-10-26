@@ -1,4 +1,4 @@
-import { Button, Descriptions, Drawer, Empty, Pagination, Typography } from 'antd';
+import { Button, Descriptions, Drawer, Empty, Pagination, Switch, Typography } from 'antd';
 import React, { useEffect, useRef, useState } from 'react';
 
 import { LEVEL_COLOR_MAP } from '@/constants';
@@ -201,6 +201,7 @@ export default function ConsolePanel({ logs, autoScroll = true, currentTime, onS
   const [selectedLog, setSelectedLog] = useState<LogInfo | null>(null);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showErrorsOnly, setShowErrorsOnly] = useState(false);
 
   // Auto scroll to bottom when new logs are added
   useEffect(() => {
@@ -234,14 +235,43 @@ export default function ConsolePanel({ logs, autoScroll = true, currentTime, onS
     }
   };
 
+  const handleFilterToggle = (checked: boolean) => {
+    setShowErrorsOnly(checked);
+    setCurrentPage(1); // Reset to first page when toggling filter
+  };
+
+  // Apply filtering
+  const filteredLogs = showErrorsOnly ? logs.filter((log) => log.level === 'error') : logs;
+
   // Calculate paginated logs
-  const totalLogs = logs.length;
+  const totalLogs = filteredLogs.length;
   const startIndex = (currentPage - 1) * PAGE_SIZE;
   const endIndex = startIndex + PAGE_SIZE;
-  const paginatedLogs = logs.slice(startIndex, endIndex);
+  const paginatedLogs = filteredLogs.slice(startIndex, endIndex);
 
   return (
     <div className="console-panel">
+      {/* Filter Control */}
+      <div
+        style={{
+          padding: '8px 12px',
+          borderBottom: '1px solid #f0f0f0',
+          background: '#fafafa',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          {showErrorsOnly ? `Showing ${totalLogs} error(s)` : `Showing all ${totalLogs} log(s)`}
+        </Text>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Text style={{ fontSize: 13 }}>Show Errors Only</Text>
+          <Switch checked={showErrorsOnly} onChange={handleFilterToggle} size="small" />
+        </div>
+      </div>
+
+      {/* Pagination */}
       {totalLogs > PAGE_SIZE && (
         <div style={{ padding: '8px 8px 4px', borderBottom: '1px solid #f0f0f0', background: '#fafafa' }}>
           <Pagination
@@ -257,8 +287,11 @@ export default function ConsolePanel({ logs, autoScroll = true, currentTime, onS
       )}
 
       <div ref={containerRef} className="console-panel-content">
-        {logs.length === 0 ? (
-          <Empty description="No console logs recorded" style={{ marginTop: 40 }} />
+        {filteredLogs.length === 0 ? (
+          <Empty
+            description={showErrorsOnly ? 'No error logs found' : 'No console logs recorded'}
+            style={{ marginTop: 40 }}
+          />
         ) : (
           paginatedLogs.map((log, index) => (
             <LogItem
