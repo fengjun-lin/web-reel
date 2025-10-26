@@ -1,5 +1,5 @@
 import { CopyOutlined } from '@ant-design/icons';
-import { Button, Descriptions, Drawer, Empty, Pagination, Space, Tag, Typography, message } from 'antd';
+import { Button, Descriptions, Drawer, Empty, Pagination, Space, Switch, Tag, Typography, message } from 'antd';
 import { useState } from 'react';
 
 import type { HarEntry } from '@/types/har';
@@ -200,6 +200,7 @@ export default function NetworkPanel({ requests, currentTime, onSeekToTime }: Ne
   const [selectedEntry, setSelectedEntry] = useState<HarEntry | null>(null);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showErrorsOnly, setShowErrorsOnly] = useState(false);
 
   // Sort requests by time
   const sortedRequests = [...requests].sort((a, b) => Date.parse(a.startedDateTime) - Date.parse(b.startedDateTime));
@@ -217,6 +218,11 @@ export default function NetworkPanel({ requests, currentTime, onSeekToTime }: Ne
     setCurrentPage(page);
   };
 
+  const handleFilterToggle = (checked: boolean) => {
+    setShowErrorsOnly(checked);
+    setCurrentPage(1); // Reset to first page when toggling filter
+  };
+
   // Find highlighted request based on current time
   const isHighlighted = (entry: HarEntry) => {
     if (!currentTime) return false;
@@ -225,14 +231,40 @@ export default function NetworkPanel({ requests, currentTime, onSeekToTime }: Ne
     return timeDiff < 2000; // Within 2 seconds
   };
 
+  // Apply filtering
+  const filteredRequests = showErrorsOnly
+    ? sortedRequests.filter((entry) => entry.response.status >= 400)
+    : sortedRequests;
+
   // Calculate paginated requests
-  const totalRequests = sortedRequests.length;
+  const totalRequests = filteredRequests.length;
   const startIndex = (currentPage - 1) * PAGE_SIZE;
   const endIndex = startIndex + PAGE_SIZE;
-  const paginatedRequests = sortedRequests.slice(startIndex, endIndex);
+  const paginatedRequests = filteredRequests.slice(startIndex, endIndex);
 
   return (
     <div className="network-panel">
+      {/* Filter Control */}
+      <div
+        style={{
+          padding: '8px 12px',
+          borderBottom: '1px solid #f0f0f0',
+          background: '#fafafa',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          {showErrorsOnly ? `Showing ${totalRequests} error(s)` : `Showing all ${totalRequests} request(s)`}
+        </Text>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Text style={{ fontSize: 13 }}>Show Errors Only</Text>
+          <Switch checked={showErrorsOnly} onChange={handleFilterToggle} size="small" />
+        </div>
+      </div>
+
+      {/* Pagination */}
       {totalRequests > PAGE_SIZE && (
         <div style={{ padding: '8px 8px 4px', borderBottom: '1px solid #f0f0f0', background: '#fafafa' }}>
           <Pagination
@@ -248,8 +280,11 @@ export default function NetworkPanel({ requests, currentTime, onSeekToTime }: Ne
       )}
 
       <div className="network-panel-content">
-        {sortedRequests.length === 0 ? (
-          <Empty description="No network requests recorded" style={{ marginTop: 40 }} />
+        {filteredRequests.length === 0 ? (
+          <Empty
+            description={showErrorsOnly ? 'No error requests found' : 'No network requests recorded'}
+            style={{ marginTop: 40 }}
+          />
         ) : (
           paginatedRequests.map((entry, index) => (
             <RequestItem
