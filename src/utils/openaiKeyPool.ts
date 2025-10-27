@@ -50,10 +50,10 @@ export class OpenAIKeyPool {
         k.lastError = undefined;
         k.lastErrorTime = undefined;
       });
-      return this.keys[this.currentIndex % this.keys.length].apiKey;
+      return this.keys[this.currentIndex % this.keys.length]!.apiKey;
     }
 
-    const key = availableKeys[this.currentIndex % availableKeys.length];
+    const key = availableKeys[this.currentIndex % availableKeys.length]!;
     this.currentIndex = (this.currentIndex + 1) % availableKeys.length;
 
     return key.apiKey;
@@ -70,9 +70,9 @@ export class OpenAIKeyPool {
       // All keys unhealthy, reset and use first
       console.warn('[OpenAIKeyPool] All keys unhealthy, resetting');
       this.resetAllKeys();
-      keyInfo = this.keys[0];
+      keyInfo = this.keys[0]!;
     } else {
-      keyInfo = availableKeys[this.currentIndex % availableKeys.length];
+      keyInfo = availableKeys[this.currentIndex % availableKeys.length]!;
       this.currentIndex = (this.currentIndex + 1) % availableKeys.length;
     }
 
